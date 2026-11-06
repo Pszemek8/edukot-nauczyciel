@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#2b4c9b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<title>EduKot 2.0 – Panel nauczyciela</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --desk:#2f5d50; --paper:#fffdf5; --line:#cfe3f1; --margin:#e57373;
+  --ink:#2b2b3a; --blue:#2b4c9b; --soft:#f3efe0; --ok:#5aa469; --warn:#e8a33d; --bad:#d9534f;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);font-family:'Patrick Hand','Comic Sans MS',cursive,sans-serif;color:var(--ink);font-size:18px;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+
+/* ---------- Lock ---------- */
+#lock{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.lockbox{background:var(--soft);border:2px solid var(--line);border-radius:18px;padding:26px 24px;width:min(340px,100%);text-align:center}
+.lockbox .cat{font-size:54px}
+.lockbox h1{font-family:'Caveat',cursive;font-size:32px;margin:4px 0 2px;color:var(--blue)}
+.lockbox p{margin:4px 0 12px;opacity:.8}
+.dots{display:flex;gap:12px;justify-content:center;margin:10px 0 16px}
+.dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--blue);display:block}
+.dots i.on{background:var(--blue)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pad button{padding:12px 0;font-size:22px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer}
+.pad button:active{background:var(--line)}
+.shake{animation:shake .35s}
+
+/* Animacja łapki po kliknięciu przycisku PIN-u */
+.pad button{position:relative;overflow:visible}
+.paw-pop{
+  position:absolute;
+  left:50%;
+  top:50%;
+  z-index:5;
+  pointer-events:none;
+  font-size:25px;
+  line-height:1;
+  transform:translate(-50%,-50%) scale(.35) rotate(-18deg);
+  opacity:0;
+  animation:pawPop .65s ease-out forwards;
+}
+@keyframes pawPop{
+  0%{transform:translate(-50%,-50%) scale(.35) rotate(-18deg);opacity:0}
+  25%{opacity:1}
+  100%{transform:translate(-50%,-115%) scale(1.25) rotate(12deg);opacity:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .paw-pop{animation-duration:.01ms}
+}
+
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.linkbtn{background:none;border:none;color:var(--blue);text-decoration:underline;cursor:pointer;margin-top:14px;font-size:15px}
+
+/* ---------- Book ---------- */
+.wrap{min-height:100vh;display:flex;flex-direction:column}
+.book{background:var(--paper);flex:1;display:flex;flex-direction:column;min-height:100vh}
+header.top{position:sticky;top:0;z-index:10;background:#2b4c9b;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header.top .logo{font-size:38px}
+header.top h1{font-family:'Caveat',cursive;font-size:32px;margin:0;line-height:1}
+header.top small{opacity:.85;display:block}
+header.top .sp{flex:1}
+.btn{background:#fff;color:var(--blue);border:2px solid var(--blue);padding:6px 14px;border-radius:10px;cursor:pointer}
+.btn:hover{background:#eef3ff}
+.btn.primary{background:var(--blue);color:#fff}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.small{padding:2px 10px;font-size:15px}
+header.top .btn{border-color:#fff}
+nav{display:flex;flex-wrap:wrap;gap:4px;padding:10px 14px 0;background:var(--soft);border-bottom:3px solid var(--blue)}
+nav button{background:#e3e0cf;border:2px solid #cfcab0;border-bottom:none;padding:7px 14px;border-radius:10px 10px 0 0;cursor:pointer}
+nav button.active{background:var(--paper);border-color:var(--blue);font-weight:bold;position:relative;top:3px;padding-bottom:10px}
+main{flex:1;padding:18px 24px 28px 52px;position:relative;
+  background-image:repeating-linear-gradient(transparent 0 33px,var(--line) 33px 34px);
+}
+main::before{content:"";position:absolute;left:36px;top:0;bottom:0;width:2px;background:var(--margin)}
+h2{font-family:'Caveat',cursive;font-size:30px;margin:0 0 10px;color:var(--blue)}
+.empty{background:#fff9;border:2px dashed var(--line);padding:18px;border-radius:12px;text-align:center}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fffd;border:2px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:10px}
+.row .name{font-size:21px;min-width:140px;font-weight:bold}
+.row .grow{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:150px}
+.chip{border:none;border-radius:8px;min-width:34px;height:34px;color:#fff;font-size:19px;cursor:pointer;font-weight:bold}
+.g1,.g2{background:var(--bad)}.g3{background:var(--warn)}.g4{background:#8bb34a}.g5,.g6{background:var(--ok)}
+.avg{font-size:15px;background:var(--soft);padding:2px 10px;border-radius:20px;white-space:nowrap}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+input[type=text],input[type=password],input[type=date],input[type=number],select,textarea{background:#fff;border:2px solid var(--line);border-radius:10px;padding:6px 10px;width:100%}
+.toolbar input[type=date],.toolbar input[type=password]{width:auto}
+label{display:block;margin:8px 0 2px;font-size:16px}
+.att{min-width:92px;border:2px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer;background:#fff}
+.att.o{background:#dff3e3;border-color:var(--ok)}.att.nb{background:#fbdcdb;border-color:var(--bad)}
+.att.sp{background:#fdf0d5;border-color:var(--warn)}.att.u{background:#dde7fb;border-color:var(--blue)}
+.note{font-size:15px;opacity:.75}
+.entry{background:#fffd;border:2px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.entry .meta{font-size:15px;opacity:.7}
+.tag{display:inline-block;border-radius:20px;padding:0 10px;font-size:15px;margin-right:6px}
+.tag.p{background:#dff3e3}.tag.u{background:#fdf0d5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}main{padding:14px 12px 24px 32px}main::before{left:22px}}
+dialog{border:3px solid var(--blue);border-radius:16px;background:var(--paper);padding:18px;width:min(420px,92vw)}
+dialog::backdrop{background:#0008}
+dialog h3{font-family:'Caveat',cursive;font-size:28px;margin:0 0 6px;color:var(--blue)}
+.dlgbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.emojis{display:flex;flex-wrap:wrap;gap:6px}
+.emojis label{margin:0}
+.emojis input{display:none}
+.emojis span{display:block;font-size:26px;padding:2px 6px;border:2px solid transparent;border-radius:10px;cursor:pointer}
+.emojis input:checked+span{border-color:var(--blue);background:#eef3ff}
+
+/* Ciemny motyw */
+:root.dark{
+  color-scheme:dark;
+  --desk:#111827; --paper:#171c2b; --line:#34415c; --margin:#754b58;
+  --ink:#edf0fa; --blue:#91aaff; --soft:#222b40; --ok:#79c58b; --warn:#f0bd69; --bad:#ff8580;
+}
+:root.dark #lock{background:var(--paper)}
+:root.dark .pad button,:root.dark input,:root.dark textarea,:root.dark select{
+  background:#202a3d;color:var(--ink);border-color:#465675;
+}
+:root.dark .btn{background:#253653;color:#f4f6ff;border-color:#6076a8}
+:root.dark .btn.primary{background:#3658a8;color:white}
+:root.dark .tab{background:#222b40;color:var(--ink);border-color:#465675}
+:root.dark .tab.active{background:var(--paper);color:var(--ink)}
+:root.dark .empty{border-color:#465675}
+:root.dark dialog{background:var(--soft);color:var(--ink);border-color:#465675}
+:root.dark .emojis input:checked+span{background:#303e5a}
+
+
+/* Poprawki czytelności ciemnego motywu */
+:root.dark body,
+:root.dark .book,
+:root.dark main { background-color:var(--paper); color:var(--ink); }
+:root.dark nav { background:#202a3d; border-bottom-color:#718acb; }
+:root.dark nav button {
+  background:#293650; color:#edf0fa; border-color:#465675;
+}
+:root.dark nav button.active {
+  background:var(--paper); color:#ffffff; border-color:#91aaff;
+}
+:root.dark .row,
+:root.dark .entry {
+  background:#252f45; color:#edf0fa; border-color:#465675;
+}
+:root.dark .empty {
+  background:#202a3d; color:#edf0fa; border-color:#6076a8;
+}
+:root.dark .att { background:#202a3d; color:#edf0fa; border-color:#6076a8; }
+:root.dark .att.o { background:#244332; border-color:#79c58b; }
+:root.dark .att.nb { background:#4a292f; border-color:#ff8580; }
+:root.dark .att.sp { background:#4a3b25; border-color:#f0bd69; }
+:root.dark .att.u { background:#293b60; border-color:#91aaff; }
+:root.dark .avg { background:#303c55; color:#edf0fa; }
+:root.dark .tag { color:#172033; }
+:root.dark .btn:hover { background:#3a4d70; }
+:root.dark input::placeholder,
+:root.dark textarea::placeholder { color:#aab5ca; opacity:1; }
+:root.dark label, :root.dark p, :root.dark h2, :root.dark h3,
+:root.dark small { color:inherit; }
+:root.dark .emojis span { background:#202a3d; color:#edf0fa; border-color:#465675; }
+
+</style>
+</head>
+<body>
+
+<!-- Ekran PIN -->
+<div id="lock">
+  <div class="lockbox" id="lockbox">
+    <div class="cat">🐱</div>
+    <h1 id="lockTitle">Dziennik</h1>
+    <p id="lockMsg"></p>
+    <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
+    <div class="pad" id="pad"></div>
+    <button class="linkbtn" id="forgot">Nie pamiętam PIN-u</button>
+  </div>
+</div>
+
+<!-- Aplikacja -->
+<div class="wrap hidden" id="app">
+  <div class="book">
+    <header class="top">
+      <div class="logo">🐾</div>
+      <div>
+        <h1>EduKot 2.0</h1>
+        <small id="className">Panel nauczyciela · Nauka z pazurem!</small>
+      </div>
+      <div class="sp"></div>
+      <span id="syncStatus" style="font-size:15px;opacity:.9"></span>
+      <button class="btn" id="lockBtn">🔒 Zablokuj</button>
+    </header>
+    <nav id="nav"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+
+<dialog id="dlg"><form id="mf"><div id="dlgBody"></div></form></dialog>
+
+<script>
+/* ============ Dane ============ */
+const KEY='dziennik-kotow-v1';
+const SYNC_KEY='dziennik-kotow-sync';
+const LOCAL_PIN_KEY='edukot-teacher-pin-hash';
+const DEFAULT_LOCAL_PIN_HASH='5168ac4f6812c10d2074fd6e0d6048d8e1f1a123bb2f1fa5f691a04a9935c821'; // PIN aplikacji 0000
+let localPinHash=localStorage.getItem(LOCAL_PIN_KEY)||DEFAULT_LOCAL_PIN_HASH;
+const SUBJECTS=['Mruczenie','Łowienie myszek','Drzemka','Mycie łapek','Plastyka (drapanie)','Zabawa kłębkiem','Śpiew (miauczenie)','Zachowanie'];
+const EMOJIS=['🐱','😺','😸','😻','🐈','🐈‍⬛','😼','🦁','🐯','🐾'];
+const ATT={'':['—','nie wpisano'],o:['+','obecny'],nb:['nb','nieobecny'],sp:['sp','spóźniony'],u:['u','usprawiedl.']};
+const ATT_ORDER=['','o','nb','sp','u'];
+
+const DEFAULT_PIN_HASH='5168ac4f6812c10d2074fd6e0d6048d8e1f1a123bb2f1fa5f691a04a9935c821'; // domyślny PIN 0000
+let db=load();
+function fresh(){return{pinHash:DEFAULT_PIN_HASH,updatedAt:0,school:'EduKot 2.0',klass:'Grupa Mruczków',kids:[],attendance:{},lessons:[],tests:[],timetable:[]}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));const r=d?Object.assign(fresh(),d):fresh();if(!r.pinHash)r.pinHash=DEFAULT_PIN_HASH;r.tests=r.tests||[];r.timetable=r.timetable||[];if(d&&!r.updatedAt)r.updatedAt=Date.now();return r}catch{return fresh()}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert('Nie udało się zapisać danych w przeglądarce.')}}
+function save(){db.updatedAt=Date.now();persist();schedulePush()}
+
+/* ============ Helpery ============ */
+const $=s=>document.querySelector(s);
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmt(iso){if(!iso)return'';const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('pl-PL',{weekday:'short',day:'numeric',month:'short'})}
+function avg(k){if(!k.grades.length)return null;return k.grades.reduce((a,g)=>a+g.value,0)/k.grades.length}
+async function hash(s){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('kot:'+s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch{return'x'+btoa(s)}}
+
+/* ============ PIN ============ */
+let pinBuf='',pinStep='enter',pinFirst='';
+function pinMode(){pinStep=localPinHash?'enter':'set1';pinBuf='';pinFirst='';drawPin()}
+function drawPin(){
+  const t={enter:['Dziennik','Wpisz PIN, żeby wejść'],set1:['Witaj! 🐱','Ustaw PIN (4 cyfry)'],set2:['Jeszcze raz','Powtórz PIN']}[pinStep];
+  $('#lockTitle').textContent=t[0];$('#lockMsg').textContent=t[1];
+  [...$('#dots').children].forEach((d,i)=>d.classList.toggle('on',i<pinBuf.length));
+  $('#forgot').classList.toggle('hidden',!localPinHash);
+}
+$('#pad').innerHTML=[1,2,3,4,5,6,7,8,9,'⌫',0,'OK'].map(k=>`<button type="button" data-k="${k}">${k}</button>`).join('');
+$('#pad').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const paw=document.createElement('span');
+  paw.className='paw-pop';
+  paw.textContent='🐾';
+  b.appendChild(paw);
+  paw.addEventListener('animationend',()=>paw.remove(),{once:true});
+  key(b.dataset.k);
+});
+document.addEventListener('keydown',e=>{
+  if($('#lock').classList.contains('hidden'))return;
+  if(/^\d$/.test(e.key))key(e.key);else if(e.key==='Backspace')key('⌫');
+});
+async function key(k){
+  if(k==='⌫'){pinBuf=pinBuf.slice(0,-1);return drawPin()}
+  if(k==='OK')return;
+  if(pinBuf.length>=4)return;
+  pinBuf+=k;drawPin();
+  if(pinBuf.length<4)return;
+  const h=await hash(pinBuf);
+  if(pinStep==='enter'){
+    if(h===localPinHash)return unlock();
+    $('#lockbox').classList.remove('shake');void $('#lockbox').offsetWidth;$('#lockbox').classList.add('shake');
+    pinBuf='';$('#lockMsg').textContent='Zły PIN, spróbuj jeszcze raz';
+    setTimeout(drawPin,50);setTimeout(()=>{$('#lockMsg').textContent='Wpisz PIN, żeby wejść'},1500);
+  }else if(pinStep==='set1'){
+    pinFirst=pinBuf;pinBuf='';pinStep='set2';drawPin();
+  }else{
+    if(pinBuf===pinFirst){localPinHash=h;localStorage.setItem(LOCAL_PIN_KEY,h);unlock()}
+    else{pinBuf='';pinFirst='';pinStep='set1';drawPin();$('#lockMsg').textContent='PIN-y się różniły, ustaw jeszcze raz'}
+  }
+}
+function unlock(){pinBuf='';$('#lock').classList.add('hidden');$('#app').classList.remove('hidden');render();syncNow()}
+function lockNow(){$('#app').classList.add('hidden');$('#lock').classList.remove('hidden');pinMode()}
+$('#lockBtn').onclick=lockNow;
+$('#forgot').onclick=()=>{
+  if(confirm('Reset PIN-u usunie WSZYSTKIE dane z tego urządzenia (oceny, obecności, uwagi) i odłączy synchronizację. Na pewno?')){
+    localStorage.removeItem(KEY);localStorage.removeItem(SYNC_KEY);localStorage.removeItem(LOCAL_PIN_KEY);localPinHash=DEFAULT_LOCAL_PIN_HASH;db=fresh();setStatus('💾 tylko w tej przeglądarce');const savedTheme=localStorage.getItem('kotyTheme')||'light';
+document.documentElement.classList.toggle('dark',savedTheme==='dark');
+if('serviceWorker' in navigator){
+  window.addEventListener('load', async ()=>{
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+      // Sprawdź, czy na serwerze jest nowsza wersja aplikacji.
+      await registration.update();
+      // Sprawdzaj ponownie, gdy użytkownik wraca do aplikacji.
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) registration.update().catch(() => {});
+      });
+      window.addEventListener('online', () => registration.update().catch(() => {}));
+      // Nowy Service Worker aktywuje się automatycznie; odśwież stronę,
+      // aby załadować najnowsze pliki aplikacji.
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+    } catch (error) {
+      console.warn('Nie udało się sprawdzić aktualizacji PWA:', error);
+    }
+  });
+}
+pinMode();
+  }
+};
+
+/* ============ Nawigacja ============ */
+const TABS=[['oceny','📒 Oceny'],['obecnosc','✅ Obecność'],['tematy','📚 Tematy zajęć'],['uwagi','⭐ Uwagi'],['kotki','🐱 Kotki'],['sprawdziany','📝 Sprawdziany'],['plan','🗓️ Plan lekcji'],['historia','🕘 Historia ocen'],['kody','🔐 Kody rodziców'],['ustawienia','⚙️ Ustawienia']];
+let tab='oceny',attDate=today(),remarkKid='';
+$('#nav').innerHTML=TABS.map(([id,l])=>`<button data-tab="${id}">${l}</button>`).join('');
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;render()});
+
+function render(){
+  if($('#schoolName'))$('#schoolName').textContent='EduKot 2.0';if($('#className'))$('#className').textContent=db.klass;
+  document.title='EduKot 2.0 – Panel nauczyciela';
+  [...$('#nav').children].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,plan:vPlan,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
+}
+const noKids=()=>`<div class="empty">Nie ma jeszcze żadnych kotków 🐾<br><br><button class="btn primary" data-act="goklasa">Dodaj pierwszego kotka</button></div>`;
+
+/* ============ Widoki ============ */
+function vOceny(){
+  if(!db.kids.length)return'<h2>Oceny</h2>'+noKids();
+  return'<h2>Oceny</h2>'+db.kids.map(k=>{
+    const a=avg(k);
+    return`<div class="row"><div class="name">${k.emoji} ${esc(k.name)}</div>
+      <div class="chips">${k.grades.map(g=>`<button class="chip g${g.value}" title="${esc(g.subject)} · ${fmt(g.date)}${g.note?' · '+esc(g.note):''}" data-act="grade" data-kid="${k.id}" data-id="${g.id}">${g.value}</button>`).join('')||'<span class="note">brak ocen</span>'}</div>
+      <span class="avg">średnia: ${a==null?'—':a.toFixed(2).replace('.',',')}</span>
+      <button class="btn small" data-act="addgrade" data-kid="${k.id}">+ ocena</button></div>`;
+  }).join('')+'<p class="note">Kliknij ocenę, żeby zobaczyć szczegóły lub ją usunąć.</p>';
+}
+
+function vObecnosc(){
+  const day=db.attendance[attDate]||{};
+  let h=`<h2>Obecność</h2><div class="toolbar"><label style="margin:0">Dzień:</label><input type="date" id="attDate" value="${attDate}"><span class="note">Klikaj, żeby zmieniać: + → nb → sp → u</span></div>`;
+  if(!db.kids.length)return h+noKids();
+  h+=db.kids.map(k=>{
+    const s=day[k.id]||'';
+    const days=Object.values(db.attendance).map(d=>d[k.id]).filter(Boolean);
+    const pres=days.filter(x=>x==='o'||x==='sp').length;
+    const pct=days.length?Math.round(pres/days.length*100)+'%':'—';
+    return`<div class="row"><div class="name">${k.emoji} ${esc(k.name)}</div><div class="grow"></div>
+      <span class="note">frekwencja: ${pct}</span>
+      <button class="att ${s}" data-act="att" data-kid="${k.id}">${ATT[s][0]} <small>${ATT[s][1]}</small></button></div>`;
+  }).join('');
+  return h;
+}
+
+function vTematy(){
+  const list=[...db.lessons].sort((a,b)=>b.date.localeCompare(a.date));
+  return`<h2>Tematy zajęć</h2>
+  <form id="lessonForm" class="entry"><div class="grid2"><div><label>Data</label><input type="date" name="date" value="${today()}" required></div>
+  <div><label>Temat</label><input type="text" name="topic" placeholder="np. Jak ładnie mruczeć" required></div></div>
+  <label>Opis (opcjonalnie)</label><textarea name="desc" rows="2"></textarea>
+  <div class="dlgbtns"><button class="btn primary">Dodaj temat</button></div></form>`+
+  (list.length?list.map(l=>`<div class="entry"><div class="meta">${fmt(l.date)} <button class="btn small danger" data-act="dellesson" data-id="${l.id}" style="float:right">usuń</button></div><strong>${esc(l.topic)}</strong>${l.desc?`<div>${esc(l.desc)}</div>`:''}</div>`).join(''):'<div class="empty">Brak zapisanych tematów.</div>');
+}
+
+function vUwagi(){
+  if(!db.kids.length)return'<h2>Uwagi i pochwały</h2>'+noKids();
+  const all=[];db.kids.forEach(k=>(k.remarks||[]).forEach(r=>all.push({...r,kid:k})));
+  all.sort((a,b)=>b.date.localeCompare(a.date));
+  return`<h2>Uwagi i pochwały</h2><div class="toolbar"><button class="btn primary" data-act="addremark">+ Nowy wpis</button></div>`+
+  (all.length?all.map(r=>`<div class="entry"><div class="meta"><span class="tag ${r.type==='p'?'p':'u'}">${r.type==='p'?'⭐ pochwała':'⚠️ uwaga'}</span>${fmt(r.date)} · ${r.kid.emoji} ${esc(r.kid.name)}
+    <button class="btn small danger" data-act="delremark" data-kid="${r.kid.id}" data-id="${r.id}" style="float:right">usuń</button></div>${esc(r.text)}</div>`).join(''):'<div class="empty">Brak wpisów. Czas kogoś pochwalić 😸</div>');
+}
+
+function vKotki(){
+  return`<h2>Kotki 🐱</h2>
+  <div class="toolbar"><button class="btn primary" data-act="addkid">+ Dodaj kotka</button></div>
+  ${db.kids.map(k=>`<div class="row"><div class="name">${k.emoji} ${esc(k.name)}</div><div class="grow"></div>
+    <button class="btn small" data-act="editkid" data-kid="${k.id}">zmień</button>
+    <button class="btn small danger" data-act="delkid" data-kid="${k.id}">usuń</button></div>`).join('')||'<div class="empty">Dodaj pierwsze kotki do klasy.</div>'}`;
+}
+
+
+function vSprawdziany(){
+ const items=[...(db.tests||[])].sort((a,b)=>a.date.localeCompare(b.date));
+ return `<h2>Sprawdziany i kartkówki</h2><div class="toolbar"><button class="btn primary" data-act="addtest">＋ Dodaj kartkówkę / sprawdzian</button></div>`+
+ (items.length?items.map(t=>`<div class="entry"><div class="meta">${fmt(t.date)} · ${esc(t.kind)} <button class="btn small danger" data-act="deltest" data-id="${t.id}" style="float:right">usuń</button></div><strong>${esc(t.title)}</strong>${t.note?`<div>${esc(t.note)}</div>`:''}</div>`).join(''):'<div class="empty">Nie zaplanowano jeszcze sprawdzianów.</div>');
+}
+function vPlan(){
+ const days=['Poniedziałek','Wtorek','Środa','Czwartek','Piątek'];
+ return `<h2>Plan lekcji</h2><form id="planForm" class="entry"><div class="grid2"><div><label>Dzień</label><select name="day">${days.map(d=>`<option>${d}</option>`).join('')}</select></div><div><label>Godzina</label><input name="time" type="time" value="09:00" required></div></div><label>Zajęcia</label><input name="topic" required maxlength="80" placeholder="np. Matematyka – liczenie myszy"><div class="dlgbtns"><button class="btn primary">Dodaj do planu</button></div></form>`+
+ (db.timetable.length?days.map(day=>{const a=db.timetable.filter(x=>x.day===day).sort((x,y)=>x.time.localeCompare(y.time));return a.length?`<h3>${day}</h3>`+a.map(x=>`<div class="row"><strong>${x.time}</strong><span class="grow">${esc(x.topic)}</span><button class="btn small danger" data-act="delplan" data-id="${x.id}">usuń</button></div>`).join(''):''}).join(''):'<div class="empty">Plan jest pusty.</div>');
+}
+function vHistoria(){
+ const all=[];db.kids.forEach(k=>(k.grades||[]).forEach(g=>all.push({...g,kid:k})));
+ all.sort((a,b)=>b.date.localeCompare(a.date));
+ return `<h2>Historia ocen</h2>`+(all.length?all.map(g=>`<div class="entry"><div class="meta">${fmt(g.date)} · ${g.kid.emoji} ${esc(g.kid.name)}</div><strong>${esc(g.subject)}: ${g.value}</strong>${g.note?`<div>${esc(g.note)}</div>`:''}</div>`).join(''):'<div class="empty">Nie ma jeszcze ocen.</div>');
+}
+function vKody(){return `<h2>🔐 Kody dostępu rodziców</h2><p class="note">Wpisz PIN nauczyciela ustawiony na serwerze (zmienna <b>EDUKOT_TEACHER_PIN</b> w Vercel) – to inny PIN niż blokada aplikacji. Najpierw połącz dziennik kodem synchronizacji w Ustawieniach. Po utworzeniu kodu przekaż go rodzicowi.</p><label>PIN nauczyciela (serwer)</label><input type="password" id="teacherCodesPin" placeholder="PIN z Vercel" autocomplete="off"><div class="grid2"><div><label>Uczeń</label><select id="inviteKid">${db.kids.map(k=>`<option value="${esc(k.id)}">${esc(k.name)}</option>`).join('')||'<option value="">Brak uczniów</option>'}</select></div><div><label>Kod dla rodzica</label><input id="newInviteCode" placeholder="np. KOTEK-4821" maxlength="40" autocomplete="off"></div></div><label style="display:flex;align-items:center;gap:8px;margin:12px 0;cursor:pointer"><input type="checkbox" id="inviteAutoApprove" style="width:auto"> Dostęp natychmiastowy (bez potwierdzenia nauczyciela)</label><p class="note" style="margin-top:0">Zaznaczone: rodzic po wpisaniu kodu od razu widzi dane dziecka. Odznaczone: prośba czeka na Twoją akceptację poniżej.</p><p><button class="btn primary" id="createInvite" type="button">Wygeneruj kod</button> <button class="btn" id="loadParentRequests" type="button">Odśwież prośby</button> <button class="btn" id="loadInvites" type="button">Lista kodów</button></p><div id="inviteStatus" class="entry">Tutaj pojawi się utworzony kod lub status.</div><h3 style="margin-top:18px">Oczekujące prośby rodziców</h3><div id="parentRequests" class="entry">Brak wczytanych próśb. Kliknij „Odśwież prośby”.</div><h3 style="margin-top:18px">Aktywne kody</h3><div id="inviteList" class="entry">Kliknij „Lista kodów”, aby zobaczyć wygenerowane kody.</div>`}
+async function teacherAccess(action,extra={}){const pin=$('#teacherCodesPin')?.value||'';if(!pin)throw Error('Wpisz PIN nauczyciela.');const isGet=['teacher-requests','teacher-list-invites'].includes(action);const r=await fetch('/api/parent'+(isGet?'?action='+action:''),{method:isGet?'GET':'POST',headers:{'Content-Type':'application/json','x-teacher-pin':pin},body:isGet?undefined:JSON.stringify({action,...extra})});const d=await r.json();if(!r.ok)throw Error(d.error||'Błąd API');return d}
+document.addEventListener('click',async e=>{
+  if(e.target.id==='createInvite'){
+    try{
+      const code=$('#newInviteCode').value.trim()||('KOTEK-'+Math.random().toString(36).slice(2,7).toUpperCase());
+      const syncCode=localStorage.getItem(SYNC_KEY)||'';
+      if(!syncCode)throw Error('Najpierw połącz dziennik kodem synchronizacji w Ustawieniach.');
+      const kidId=$('#inviteKid').value;
+      if(!kidId)throw Error('Dodaj ucznia i wybierz go z listy.');
+      const autoApprove=!!$('#inviteAutoApprove')?.checked;
+      const d=await teacherAccess('teacher-create-code',{code,childId:kidId,syncCode,autoApprove});
+      $('#newInviteCode').value=d.code;
+      $('#inviteStatus').textContent='Kod utworzony: '+d.code+(d.childName?' dla '+d.childName:'')+(d.autoApprove?' · dostęp natychmiastowy':'. Przekaż go rodzicowi – prośba będzie wymagać akceptacji')+'.';
+      const listBtn=$('#loadInvites');if(listBtn)listBtn.click();
+    }catch(x){$('#inviteStatus').textContent=x.message}
+  }
+  if(e.target.id==='loadParentRequests'){
+    try{
+      const d=await teacherAccess('teacher-requests');
+      $('#parentRequests').innerHTML=d.requests.length?d.requests.map(q=>`<div class="entry"><b>${esc(q.parentName)}</b> · kod: ${esc(q.inviteCode)}${q.childName?` · uczeń: ${esc(q.childName)}`:''}${q.contact?`<div>Kontakt: ${esc(q.contact)}</div>`:''}<div>${new Date(q.createdAt).toLocaleString('pl-PL')}</div><button class="btn primary" data-parent-action="teacher-approve" data-request="${esc(q.id)}">Akceptuj</button> <button class="btn danger" data-parent-action="teacher-reject" data-request="${esc(q.id)}">Odrzuć</button></div>`).join(''):'Brak oczekujących próśb.';
+    }catch(x){$('#parentRequests').textContent=x.message}
+  }
+  if(e.target.id==='loadInvites'){
+    try{
+      const d=await teacherAccess('teacher-list-invites');
+      $('#inviteList').innerHTML=d.invites.length?d.invites.map(inv=>`<div class="entry"><b>${esc(inv.code)}</b> · ${esc(inv.childName||'uczeń')}${inv.active?' · <span style="color:var(--ok)">aktywny</span>':' · <span style="color:var(--bad)">wyłączony</span>'}${inv.autoApprove?' · <span style="color:var(--blue)">natychmiastowy</span>':' · z potwierdzeniem'}<div>${inv.createdAt?new Date(inv.createdAt).toLocaleString('pl-PL'):''}</div><button class="btn ${inv.active?'danger':'primary'}" data-toggle-invite="${esc(inv.code)}" data-active="${inv.active?'0':'1'}">${inv.active?'Wyłącz kod':'Włącz kod'}</button></div>`).join(''):'Brak wygenerowanych kodów.';
+    }catch(x){$('#inviteList').textContent=x.message}
+  }
+  const a=e.target.dataset?.parentAction;
+  if(a){
+    try{
+      await teacherAccess(a,{requestId:e.target.dataset.request});
+      e.target.closest('.entry').remove();
+      alert(a==='teacher-approve'?'Dostęp przyznany! Rodzic zobaczy dane dziecka.':'Prośba odrzucona.');
+    }catch(x){alert(x.message)}
+  }
+  const tog=e.target.dataset?.toggleInvite;
+  if(tog){
+    try{
+      const active=e.target.dataset.active==='1';
+      await teacherAccess('teacher-toggle-invite',{code:tog,active});
+      const listBtn=$('#loadInvites');if(listBtn)listBtn.click();
+    }catch(x){alert(x.message)}
+  }
+});
+function vUstawienia(){
+  return`<h2>Ustawienia ⚙️</h2>
+  <h2 style="margin-top:22px">Szkoła</h2>
+  <div class="grid2"><div><label>Nazwa przedszkola</label><input type="text" id="setSchool" value="${esc(db.school)}"></div>
+  <div><label>Nazwa grupy</label><input type="text" id="setClass" value="${esc(db.klass)}"></div></div>
+  <h2 style="margin-top:22px">Wygląd 🌙</h2>
+  <div class="toolbar"><button class="btn" type="button" data-act="toggleTheme" id="themeToggle">🌙 Włącz ciemny motyw</button></div>
+  <h2 style="margin-top:22px">Synchronizacja ☁️</h2>
+  <p class="note">Kod synchronizacji łączy urządzenia z tym samym dziennikiem. Przy pierwszym połączeniu ustawisz PIN dla tego kodu. Na pozostałych urządzeniach wpisz ten sam kod i ten sam PIN. Wygrywa ostatnia zmiana, więc nie edytuj dziennika na dwóch urządzeniach naraz.</p>
+  <div class="toolbar"><input type="password" id="syncCode" placeholder="kod synchronizacji" autocomplete="off" style="max-width:240px" value="${esc(localStorage.getItem(SYNC_KEY)||'')}">
+  <button class="btn primary" data-act="synclink">${hasCode()?'Zapisz kod':'Połącz'}</button>
+  ${hasCode()?'<button class="btn" data-act="syncnow">Synchronizuj teraz</button><button class="btn danger" data-act="syncoff">Odłącz</button>':''}</div>
+  <h2 style="margin-top:22px">Kopia zapasowa</h2>
+  <p class="note">Dane są tylko w tej przeglądarce. Jeśli wyczyścisz dane przeglądarki, znikną, więc od czasu do czasu pobierz kopię.</p>
+  <div class="toolbar"><button class="btn" data-act="export">⬇️ Pobierz kopię</button>
+  <button class="btn" data-act="import">⬆️ Wczytaj kopię</button>
+  <button class="btn" data-act="changepin">🔑 Zmień PIN</button>
+  <input type="file" id="importFile" accept="application/json" class="hidden"></div>`;
+}
+
+/* ============ Okno dialogowe ============ */
+function modal(title,body,onOk,okLabel='Zapisz'){
+  $('#dlgBody').innerHTML=`<h3>${title}</h3>${body}<div class="dlgbtns"><button type="button" class="btn" id="dlgCancel">Anuluj</button><button class="btn primary">${okLabel}</button></div>`;
+  $('#dlgCancel').onclick=()=>$('#dlg').close();
+  $('#mf').onsubmit=e=>{e.preventDefault();onOk(new FormData($('#mf')));$('#dlg').close()};
+  $('#dlg').showModal();
+}
+const emojiPicker=sel=>`<label>Buźka</label><div class="emojis">${EMOJIS.map(e=>`<label><input type="radio" name="emoji" value="${e}" ${e===sel?'checked':''}><span>${e}</span></label>`).join('')}</div>`;
+
+function kidModal(kid){
+  modal(kid?'Zmień kotka':'Nowy kotek',`<label>Imię</label><input type="text" name="name" required maxlength="30" value="${esc(kid?.name||'')}">${emojiPicker(kid?.emoji||'🐱')}`,fd=>{
+    const name=fd.get('name').trim();if(!name)return;
+    if(kid){kid.name=name;kid.emoji=fd.get('emoji')}
+    else db.kids.push({id:uid(),name,emoji:fd.get('emoji')||'🐱',grades:[],remarks:[]});
+    save();render();
+  });
+}
+
+/* ============ Akcje ============ */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const act=b.dataset.act,kid=db.kids.find(k=>k.id===b.dataset.kid);
+  if(act==='toggleTheme'){
+    const dark=!document.documentElement.classList.contains('dark');
+    document.documentElement.classList.toggle('dark',dark);
+    localStorage.setItem('kotyTheme',dark?'dark':'light');
+    b.textContent=dark?'☀️ Włącz jasny motyw':'🌙 Włącz ciemny motyw';
+    return;
+  }
+  if(act==='goklasa'){tab='kotki';render()}
+  else if(act==='addkid')kidModal();
+  else if(act==='editkid')kidModal(kid);
+  else if(act==='delkid'){if(confirm(`Usunąć ${kid.name} razem z ocenami i uwagami?`)){db.kids=db.kids.filter(k=>k!==kid);Object.values(db.attendance).forEach(d=>delete d[kid.id]);save();render()}}
+  else if(act==='addgrade'){
+    modal(`Nowa ocena: ${esc(kid.name)}`,`
+      <label>Przedmiot</label><input type="text" name="subject" list="subjects" required value="${SUBJECTS[0]}"><datalist id="subjects">${SUBJECTS.map(s=>`<option value="${s}">`).join('')}</datalist>
+      <label>Ocena (1–6)</label><select name="value">${[6,5,4,3,2,1].map(n=>`<option>${n}</option>`).join('')}</select>
+      <label>Data</label><input type="date" name="date" value="${today()}" required>
+      <label>Komentarz (opcjonalnie)</label><input type="text" name="note" maxlength="80">`,fd=>{
+        kid.grades.push({id:uid(),subject:fd.get('subject').trim(),value:+fd.get('value'),date:fd.get('date'),note:fd.get('note').trim()});
+        save();render();
+      });
+  }
+  else if(act==='grade'){
+    const g=kid.grades.find(x=>x.id===b.dataset.id);
+    if(confirm(`${kid.name}\n${g.subject}: ${g.value}\n${fmt(g.date)}${g.note?'\n'+g.note:''}\n\nUsunąć tę ocenę?`)){kid.grades=kid.grades.filter(x=>x!==g);save();render()}
+  }
+  else if(act==='att'){
+    const day=db.attendance[attDate]=db.attendance[attDate]||{};
+    const next=ATT_ORDER[(ATT_ORDER.indexOf(day[kid.id]||'')+1)%ATT_ORDER.length];
+    if(next)day[kid.id]=next;else delete day[kid.id];
+    if(!Object.keys(day).length)delete db.attendance[attDate];
+    save();render();
+  }
+  else if(act==='dellesson'){if(confirm('Usunąć ten temat?')){db.lessons=db.lessons.filter(l=>l.id!==b.dataset.id);save();render()}}
+  else if(act==='addremark'){
+    modal('Nowy wpis',`<label>Kotek</label><select name="kid">${db.kids.map(k=>`<option value="${k.id}">${k.emoji} ${esc(k.name)}</option>`).join('')}</select>
+      <label>Rodzaj</label><select name="type"><option value="p">⭐ Pochwała</option><option value="u">⚠️ Uwaga</option></select>
+      <label>Treść</label><textarea name="text" rows="3" required></textarea>
+      <label>Data</label><input type="date" name="date" value="${today()}" required>`,fd=>{
+        const k=db.kids.find(x=>x.id===fd.get('kid'));k.remarks=k.remarks||[];
+        k.remarks.push({id:uid(),type:fd.get('type'),text:fd.get('text').trim(),date:fd.get('date')});save();render();
+      });
+  }
+  else if(act==='delremark'){if(confirm('Usunąć ten wpis?')){kid.remarks=kid.remarks.filter(r=>r.id!==b.dataset.id);save();render()}}
+  else if(act==='addtest'){
+    modal('Nowa kartkówka / sprawdzian',`<label>Rodzaj</label><select name="kind"><option>Kartkówka</option><option>Sprawdzian</option></select><label>Tytuł / zakres</label><input name="title" required maxlength="100"><label>Data</label><input name="date" type="date" value="${today()}" required><label>Informacja (opcjonalnie)</label><textarea name="note" rows="2"></textarea>`,fd=>{db.tests.push({id:uid(),kind:fd.get('kind'),title:fd.get('title').trim(),date:fd.get('date'),note:fd.get('note').trim()});save();render()});
+  }
+  else if(act==='deltest'){if(confirm('Usunąć ten termin?')){db.tests=db.tests.filter(x=>x.id!==b.dataset.id);save();render()}}
+  else if(act==='delplan'){if(confirm('Usunąć pozycję planu?')){db.timetable=db.timetable.filter(x=>x.id!==b.dataset.id);save();render()}}
+  else if(act==='synclink')linkSync();
+  else if(act==='syncnow')syncNow().then(ok=>{if(!ok)alert('Nie udało się zsynchronizować: '+(lastErr||'sprawdź połączenie'))});
+  else if(act==='syncoff'){localStorage.removeItem(SYNC_KEY);setStatus('💾 tylko w tej przeglądarce');render()}
+  else if(act==='export'){
+    const a=document.createElement('a');
+    const copy={...db,pinHash:null};
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(copy,null,2)],{type:'application/json'}));
+    a.download=`dziennik-kotow-${today()}.json`;a.click();URL.revokeObjectURL(a.href);
+  }
+  else if(act==='import'){$('#importFile').click()}
+  else if(act==='changepin'){
+    if(confirm('Zmienić PIN aplikacji? Dane i kod synchronizacji zostaną zachowane.')){localStorage.removeItem(LOCAL_PIN_KEY);localPinHash='';lockNow()}
+  }
+});
+
+document.addEventListener('change',e=>{
+  if(e.target.id==='attDate'){attDate=e.target.value||today();render()}
+  else if(e.target.id==='setSchool'){db.school=e.target.value.trim()||'Przedszkole Kotów';save();render()}
+  else if(e.target.id==='setClass'){db.klass=e.target.value.trim()||'Grupa';save();render()}
+  else if(e.target.id==='importFile'){
+    const f=e.target.files[0];if(!f)return;
+    f.text().then(t=>{
+      try{
+        const d=JSON.parse(t);if(!Array.isArray(d.kids))throw 0;
+        if(!confirm('Wczytanie kopii zastąpi obecne dane. Kontynuować?'))return;
+        const pin=db.pinHash;db=Object.assign(fresh(),d,{pinHash:pin});save();render();
+      }catch{alert('To nie wygląda na plik kopii dziennika.')}
+    });
+    e.target.value='';
+  }
+});
+
+document.addEventListener('submit',e=>{
+  if(e.target.id==='planForm'){
+    e.preventDefault();const fd=new FormData(e.target);db.timetable.push({id:uid(),day:fd.get('day'),time:fd.get('time'),topic:fd.get('topic').trim()});save();render();
+  }
+  if(e.target.id==='lessonForm'){
+    e.preventDefault();const fd=new FormData(e.target);
+    db.lessons.push({id:uid(),date:fd.get('date'),topic:fd.get('topic').trim(),desc:(fd.get('desc')||'').trim()});
+    save();render();
+  }
+});
+
+/* ============ Synchronizacja ============ */
+const hasCode=()=>!!localStorage.getItem(SYNC_KEY);
+let pushTimer=null,syncing=false,again=false,lastErr='';
+function setStatus(t){const s=$('#syncStatus');if(s)s.textContent=t}
+async function api(method,body){
+  const r=await fetch('/api/sync',{method,cache:'no-store',headers:{'Content-Type':'application/json','x-sync-code':localStorage.getItem(SYNC_KEY)||''},body:body?JSON.stringify(body):undefined});
+  if(r.status===401){const e=new Error('auth');e.auth=true;throw e}
+  if(!r.ok){let m='';try{m=(await r.json()).error}catch{}throw new Error(m||('HTTP '+r.status))}
+  return r.json();
+}
+const busy=()=>$('#dlg').open||/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement&&document.activeElement.tagName);
+function schedulePush(){if(!hasCode())return;setStatus('⏳ zapisuję…');clearTimeout(pushTimer);pushTimer=setTimeout(syncNow,1000)}
+async function syncNow(){
+  if(!hasCode())return false;
+  if(syncing){again=true;return false}
+  syncing=true;lastErr='';let ok=false;
+  try{
+    const r=(await api('GET')).data;
+    const mine=db.updatedAt||0,theirs=(r&&r.updatedAt)||0;
+    if(theirs>mine){
+      if(busy())setStatus('☁️ nowsze dane wczytam za chwilę');
+      else{db=Object.assign(fresh(),r);persist();render();setStatus('☁️ zsynchronizowano')}
+    }else if(mine>theirs){
+      const payload={...db};
+      await api('PUT',payload);setStatus('☁️ zsynchronizowano');
+    }else setStatus('☁️ zsynchronizowano');
+    ok=true;
+  }catch(e){
+    lastErr=e.auth?'zły kod synchronizacji':(e.message||'błąd');
+    if(e.auth)localStorage.removeItem(SYNC_KEY);
+    setStatus(e.auth?'⚠️ zły kod':'⚠️ offline');
+  }finally{syncing=false;if(again){again=false;setTimeout(syncNow,300)}}
+  return ok;
+}
+async function linkSync(){
+  const v=($('#syncCode').value||'').trim();
+  if(!v)return alert('Wpisz kod synchronizacji.');
+  if(v.length<4)return alert('Kod synchronizacji musi mieć co najmniej 4 znaki.');
+  const previous=localStorage.getItem(SYNC_KEY)||'';
+  localStorage.setItem(SYNC_KEY,v);setStatus('⏳ sprawdzam kod…');
+  try{
+    const remote=(await api('GET')).data;
+    let sharedHash=remote&&remote.pinHash;
+    if(sharedHash){
+      const entered=prompt('Ten kod ma już ustawiony PIN. Wpisz PIN tego dziennika (4 cyfry):');
+      if(entered===null)throw new Error('Anulowano łączenie');
+      if(!/^\d{4}$/.test(entered)||await hash(entered)!==sharedHash){
+        throw new Error('PIN nie pasuje do tego kodu synchronizacji.');
+      }
+      if(remote.updatedAt>(db.updatedAt||0)){
+        db=Object.assign(fresh(),remote);
+        persist();
+      }else{
+        db.pinHash=sharedHash;
+        await api('PUT',db);
+      }
+    }else{
+      if(remote && (remote.updatedAt||0) > (db.updatedAt||0)){
+        db=Object.assign(fresh(),remote);
+        persist();
+      }
+      const first=prompt('Ustaw PIN dla tego kodu synchronizacji (4 cyfry):');
+      if(first===null)throw new Error('Anulowano łączenie');
+      if(!/^\d{4}$/.test(first))throw new Error('PIN musi mieć dokładnie 4 cyfry.');
+      const second=prompt('Wpisz PIN ponownie, żeby go potwierdzić:');
+      if(second===null)throw new Error('Anulowano łączenie');
+      if(first!==second)throw new Error('PIN-y są różne. Spróbuj ponownie.');
+      db.pinHash=await hash(first);
+      db.updatedAt=Date.now();
+      await api('PUT',db);
+    }
+    setStatus('☁️ połączono');
+    alert('Połączono! Ten kod synchronizacji ma teraz własny PIN. Na każdym kolejnym urządzeniu wpisz ten sam kod i PIN.');
+    render();
+    if(remote&&remote.updatedAt>(db.updatedAt||0)){db=Object.assign(fresh(),remote);persist();render()}
+    syncNow();
+  }catch(e){
+    if(previous)localStorage.setItem(SYNC_KEY,previous);else localStorage.removeItem(SYNC_KEY);
+    lastErr=e.message||'błąd';
+    setStatus('⚠️ nie połączono');
+    alert('Nie udało się połączyć: '+lastErr);
+  }
+}
+setInterval(()=>{if(!document.hidden)syncNow()},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow()});
+window.addEventListener('online',syncNow);
+setStatus(hasCode()?'☁️ łączę…':'💾 tylko w tej przeglądarce');
+
+pinMode();
+</script>
+</body>
+</html>
