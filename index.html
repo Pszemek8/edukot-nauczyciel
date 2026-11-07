@@ -367,7 +367,7 @@ let tab='oceny',attDate=today(),remarkKid='';
 const MOBILE_TABS=[['oceny','📒','Oceny'],['obecnosc','✅','Obecność'],['tematy','📚','Tematy'],['kotki','🐱','Kotki'],['uwagi','⭐','Uwagi'],['sprawdziany','📝','Sprawdziany'],['historia','🕘','Historia'],['kody','🔐','Kody'],['ustawienia','⚙️','Ustawienia']];
 function drawNav(){
   const small=window.matchMedia('(max-width:700px)').matches;
-  $('#nav').innerHTML=small?MOBILE_TABS.slice(0,4).map(([id,icon,label])=>`<button data-tab="${id}" aria-label="${label}"><span>${icon}</span><span>${label}</span></button>`).join('')+`<button data-tab="more" aria-label="Więcej"><span>•••</span><span>Więcej</span></button>`:TABS.map(([id,l])=>`<button data-tab="${id}">${l}</button>`).join('');
+  $('#nav').innerHTML=small?MOBILE_TABS.slice(0,4).map(([id,icon,label])=>`<button data-tab="${id}" aria-label="${label}"><span>${icon}</span><span>${label}</span></button>`).join('')+`<button data-tab="more" aria-label="Więcej"><span>•••</span><span>Więcej</span></button>`:TABS.map(([id,l])=>{const parts=l.match(/^(\S+)\s+(.+)$/);return `<button data-tab="${id}"><span>${parts?parts[1]:''}</span><span>${parts?parts[2]:l}</span></button>`}).join('');
 }
 drawNav();
 window.addEventListener('resize',drawNav);
