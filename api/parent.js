@@ -113,7 +113,8 @@ export default async function handler(req,res){
         name:child.name||'',
         emoji:child.emoji||'🐱',
         grades:Array.isArray(child.grades)?child.grades:[],
-        remarks:Array.isArray(child.remarks)?child.remarks:[]
+        remarks:Array.isArray(child.remarks)?child.remarks:[],
+        points:child.points&&typeof child.points==='object'?{plus:Number(child.points.plus)||0,minus:Number(child.points.minus)||0}:{plus:0,minus:0}
       };
       return send(res,200,{
         approved:true,
