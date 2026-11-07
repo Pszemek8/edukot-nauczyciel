@@ -312,7 +312,7 @@ pinMode();
 };
 
 /* ============ Nawigacja ============ */
-const TABS=[['oceny','📒 Oceny'],['obecnosc','✅ Obecność'],['tematy','📚 Tematy zajęć'],['uwagi','⭐ Uwagi'],['kotki','🐱 Kotki'],['sprawdziany','📝 Sprawdziany'],['plan','🗓️ Plan lekcji'],['historia','🕘 Historia ocen'],['kody','🔐 Kody rodziców'],['ustawienia','⚙️ Ustawienia']];
+const TABS=[['oceny','📒 Oceny'],['obecnosc','✅ Obecność'],['tematy','📚 Tematy zajęć'],['uwagi','⭐ Uwagi'],['kotki','🐱 Kotki'],['sprawdziany','📝 Sprawdziany'],['historia','🕘 Historia ocen'],['kody','🔐 Kody rodziców'],['ustawienia','⚙️ Ustawienia']];
 let tab='oceny',attDate=today(),remarkKid='';
 $('#nav').innerHTML=TABS.map(([id,l])=>`<button data-tab="${id}">${l}</button>`).join('');
 $('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;render()});
@@ -321,7 +321,7 @@ function render(){
   if($('#schoolName'))$('#schoolName').textContent='EduKot 2.0';if($('#className'))$('#className').textContent=db.klass;
   document.title='EduKot 2.0 – Panel nauczyciela';
   [...$('#nav').children].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,plan:vPlan,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
+  $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
 }
 const noKids=()=>`<div class="empty">Nie ma jeszcze żadnych kotków 🐾<br><br><button class="btn primary" data-act="goklasa">Dodaj pierwszego kotka</button></div>`;
 
@@ -385,11 +385,6 @@ function vSprawdziany(){
  const items=[...(db.tests||[])].sort((a,b)=>a.date.localeCompare(b.date));
  return `<h2>Sprawdziany i kartkówki</h2><div class="toolbar"><button class="btn primary" data-act="addtest">＋ Dodaj kartkówkę / sprawdzian</button></div>`+
  (items.length?items.map(t=>`<div class="entry"><div class="meta">${fmt(t.date)} · ${esc(t.kind)} <button class="btn small danger" data-act="deltest" data-id="${t.id}" style="float:right">usuń</button></div><strong>${esc(t.title)}</strong>${t.note?`<div>${esc(t.note)}</div>`:''}</div>`).join(''):'<div class="empty">Nie zaplanowano jeszcze sprawdzianów.</div>');
-}
-function vPlan(){
- const days=['Poniedziałek','Wtorek','Środa','Czwartek','Piątek'];
- return `<h2>Plan lekcji</h2><form id="planForm" class="entry"><div class="grid2"><div><label>Dzień</label><select name="day">${days.map(d=>`<option>${d}</option>`).join('')}</select></div><div><label>Godzina</label><input name="time" type="time" value="09:00" required></div></div><label>Zajęcia</label><input name="topic" required maxlength="80" placeholder="np. Matematyka – liczenie myszy"><div class="dlgbtns"><button class="btn primary">Dodaj do planu</button></div></form>`+
- (db.timetable.length?days.map(day=>{const a=db.timetable.filter(x=>x.day===day).sort((x,y)=>x.time.localeCompare(y.time));return a.length?`<h3>${day}</h3>`+a.map(x=>`<div class="row"><strong>${x.time}</strong><span class="grow">${esc(x.topic)}</span><button class="btn small danger" data-act="delplan" data-id="${x.id}">usuń</button></div>`).join(''):''}).join(''):'<div class="empty">Plan jest pusty.</div>');
 }
 function vHistoria(){
  const all=[];db.kids.forEach(k=>(k.grades||[]).forEach(g=>all.push({...g,kid:k})));
@@ -531,7 +526,6 @@ document.addEventListener('click',e=>{
     modal('Nowa kartkówka / sprawdzian',`<label>Rodzaj</label><select name="kind"><option>Kartkówka</option><option>Sprawdzian</option></select><label>Tytuł / zakres</label><input name="title" required maxlength="100"><label>Data</label><input name="date" type="date" value="${today()}" required><label>Informacja (opcjonalnie)</label><textarea name="note" rows="2"></textarea>`,fd=>{db.tests.push({id:uid(),kind:fd.get('kind'),title:fd.get('title').trim(),date:fd.get('date'),note:fd.get('note').trim()});save();render()});
   }
   else if(act==='deltest'){if(confirm('Usunąć ten termin?')){db.tests=db.tests.filter(x=>x.id!==b.dataset.id);save();render()}}
-  else if(act==='delplan'){if(confirm('Usunąć pozycję planu?')){db.timetable=db.timetable.filter(x=>x.id!==b.dataset.id);save();render()}}
   else if(act==='synclink')linkSync();
   else if(act==='syncnow')syncNow().then(ok=>{if(!ok)alert('Nie udało się zsynchronizować: '+(lastErr||'sprawdź połączenie'))});
   else if(act==='syncoff'){localStorage.removeItem(SYNC_KEY);setStatus('💾 tylko w tej przeglądarce');render()}
@@ -565,9 +559,6 @@ document.addEventListener('change',e=>{
 });
 
 document.addEventListener('submit',e=>{
-  if(e.target.id==='planForm'){
-    e.preventDefault();const fd=new FormData(e.target);db.timetable.push({id:uid(),day:fd.get('day'),time:fd.get('time'),topic:fd.get('topic').trim()});save();render();
-  }
   if(e.target.id==='lessonForm'){
     e.preventDefault();const fd=new FormData(e.target);
     db.lessons.push({id:uid(),date:fd.get('date'),topic:fd.get('topic').trim(),desc:(fd.get('desc')||'').trim()});
