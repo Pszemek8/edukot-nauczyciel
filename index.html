@@ -232,6 +232,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function fmt(iso){if(!iso)return'';const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('pl-PL',{weekday:'short',day:'numeric',month:'short'})}
 function avg(k){if(!k.grades.length)return null;return k.grades.reduce((a,g)=>a+g.value,0)/k.grades.length}
+function gradeLabel(g){return String(g.value)+(g.modifier||'')}
 async function hash(s){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('kot:'+s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch{return'x'+btoa(s)}}
 
 /* ============ PIN ============ */
@@ -329,11 +330,11 @@ const noKids=()=>`<div class="empty">Nie ma jeszcze żadnych kotków 🐾<br><br
 function vOceny(){
   if(!db.kids.length)return'<h2>Oceny</h2>'+noKids();
   return'<h2>Oceny</h2>'+db.kids.map(k=>{
-    const a=avg(k);
+    const a=avg(k);k.points=k.points||{plus:0,minus:0};
     return`<div class="row"><div class="name">${k.emoji} ${esc(k.name)}</div>
-      <div class="chips">${k.grades.map(g=>`<button class="chip g${g.value}" title="${esc(g.subject)} · ${fmt(g.date)}${g.note?' · '+esc(g.note):''}" data-act="grade" data-kid="${k.id}" data-id="${g.id}">${g.value}</button>`).join('')||'<span class="note">brak ocen</span>'}</div>
+      <div class="chips">${k.grades.map(g=>`<button class="chip g${g.value}" title="${esc(g.subject)} · ${fmt(g.date)}${g.note?' · '+esc(g.note):''}" data-act="grade" data-kid="${k.id}" data-id="${g.id}">${gradeLabel(g)}</button>`).join('')||'<span class="note">brak ocen</span>'}</div>
       <span class="avg">średnia: ${a==null?'—':a.toFixed(2).replace('.',',')}</span>
-      <button class="btn small" data-act="addgrade" data-kid="${k.id}">+ ocena</button></div>`;
+      <button class="btn small" data-act="plus" data-kid="${k.id}">＋ (${k.points.plus})</button><button class="btn small danger" data-act="minus" data-kid="${k.id}">− (${k.points.minus})</button><button class="btn small" data-act="addgrade" data-kid="${k.id}">+ ocena</button></div>`;
   }).join('')+'<p class="note">Kliknij ocenę, żeby zobaczyć szczegóły lub ją usunąć.</p>';
 }
 
@@ -389,7 +390,7 @@ function vSprawdziany(){
 function vHistoria(){
  const all=[];db.kids.forEach(k=>(k.grades||[]).forEach(g=>all.push({...g,kid:k})));
  all.sort((a,b)=>b.date.localeCompare(a.date));
- return `<h2>Historia ocen</h2>`+(all.length?all.map(g=>`<div class="entry"><div class="meta">${fmt(g.date)} · ${g.kid.emoji} ${esc(g.kid.name)}</div><strong>${esc(g.subject)}: ${g.value}</strong>${g.note?`<div>${esc(g.note)}</div>`:''}</div>`).join(''):'<div class="empty">Nie ma jeszcze ocen.</div>');
+ return `<h2>Historia ocen</h2>`+(all.length?all.map(g=>`<div class="entry"><div class="meta">${fmt(g.date)} · ${g.kid.emoji} ${esc(g.kid.name)}</div><strong>${esc(g.subject)}: ${gradeLabel(g)}</strong>${g.note?`<div>${esc(g.note)}</div>`:''}</div>`).join(''):'<div class="empty">Nie ma jeszcze ocen.</div>');
 }
 function vKody(){return `<h2>🔐 Kody dostępu rodziców</h2><p class="note">Wpisz PIN nauczyciela ustawiony na serwerze (zmienna <b>EDUKOT_TEACHER_PIN</b> w Vercel) – to inny PIN niż blokada aplikacji. Najpierw połącz dziennik kodem synchronizacji w Ustawieniach. Po utworzeniu kodu przekaż go rodzicowi.</p><label>PIN nauczyciela (serwer)</label><input type="password" id="teacherCodesPin" placeholder="PIN z Vercel" autocomplete="off"><div class="grid2"><div><label>Uczeń</label><select id="inviteKid">${db.kids.map(k=>`<option value="${esc(k.id)}">${esc(k.name)}</option>`).join('')||'<option value="">Brak uczniów</option>'}</select></div><div><label>Kod dla rodzica</label><input id="newInviteCode" placeholder="np. KOTEK-4821" maxlength="40" autocomplete="off"></div></div><label style="display:flex;align-items:center;gap:8px;margin:12px 0;cursor:pointer"><input type="checkbox" id="inviteAutoApprove" style="width:auto"> Dostęp natychmiastowy (bez potwierdzenia nauczyciela)</label><p class="note" style="margin-top:0">Zaznaczone: rodzic po wpisaniu kodu od razu widzi dane dziecka. Odznaczone: prośba czeka na Twoją akceptację poniżej.</p><p><button class="btn primary" id="createInvite" type="button">Wygeneruj kod</button> <button class="btn" id="loadParentRequests" type="button">Odśwież prośby</button> <button class="btn" id="loadInvites" type="button">Lista kodów</button></p><div id="inviteStatus" class="entry">Tutaj pojawi się utworzony kod lub status.</div><h3 style="margin-top:18px">Oczekujące prośby rodziców</h3><div id="parentRequests" class="entry">Brak wczytanych próśb. Kliknij „Odśwież prośby”.</div><h3 style="margin-top:18px">Aktywne kody</h3><div id="inviteList" class="entry">Kliknij „Lista kodów”, aby zobaczyć wygenerowane kody.</div>`}
 async function teacherAccess(action,extra={}){const pin=$('#teacherCodesPin')?.value||'';if(!pin)throw Error('Wpisz PIN nauczyciela.');const isGet=['teacher-requests','teacher-list-invites'].includes(action);const r=await fetch('/api/parent'+(isGet?'?action='+action:''),{method:isGet?'GET':'POST',headers:{'Content-Type':'application/json','x-teacher-pin':pin},body:isGet?undefined:JSON.stringify({action,...extra})});const d=await r.json();if(!r.ok)throw Error(d.error||'Błąd API');return d}
@@ -493,16 +494,21 @@ document.addEventListener('click',e=>{
   else if(act==='addgrade'){
     modal(`Nowa ocena: ${esc(kid.name)}`,`
       <label>Przedmiot</label><input type="text" name="subject" list="subjects" required value="${SUBJECTS[0]}"><datalist id="subjects">${SUBJECTS.map(s=>`<option value="${s}">`).join('')}</datalist>
-      <label>Ocena (1–6)</label><select name="value">${[6,5,4,3,2,1].map(n=>`<option>${n}</option>`).join('')}</select>
+      <label>Ocena</label><select name="mark">${[6,5,4,3,2,1].flatMap(n=>[' +','','-'].map(m=>({n,m:m.trim()}))).filter(x=>!(x.n===6&&x.m==='+')&&!(x.n===1&&x.m==='-')).map(x=>`<option value="${x.n}${x.m}">${x.n}${x.m}</option>`).join('')}</select>
       <label>Data</label><input type="date" name="date" value="${today()}" required>
       <label>Komentarz (opcjonalnie)</label><input type="text" name="note" maxlength="80">`,fd=>{
-        kid.grades.push({id:uid(),subject:fd.get('subject').trim(),value:+fd.get('value'),date:fd.get('date'),note:fd.get('note').trim()});
+        const mark=fd.get('mark');const match=mark.match(/^([1-6])([+-]?)$/);kid.grades.push({id:uid(),subject:fd.get('subject').trim(),value:+match[1],modifier:match[2],date:fd.get('date'),note:fd.get('note').trim()});
         save();render();
       });
   }
+  else if(act==='plus'||act==='minus'){
+    kid.points=kid.points||{plus:0,minus:0};const key=act==='plus'?'plus':'minus';kid.points[key]=(kid.points[key]||0)+1;
+    if(kid.points[key]>=3){const p=key==='plus';kid.grades.push({id:uid(),subject:'Aktywność',value:p?6:1,modifier:'',date:today(),note:p?'Automatycznie za 3 plusy':'Automatycznie za 3 minusy'});kid.points[key]=0;alert(p?'🎉 3 plusy! Dodano ocenę 6.':'Dodano ocenę 1 za 3 minusy.');}
+    save();render();
+  }
   else if(act==='grade'){
     const g=kid.grades.find(x=>x.id===b.dataset.id);
-    if(confirm(`${kid.name}\n${g.subject}: ${g.value}\n${fmt(g.date)}${g.note?'\n'+g.note:''}\n\nUsunąć tę ocenę?`)){kid.grades=kid.grades.filter(x=>x!==g);save();render()}
+    if(confirm(`${kid.name}\n${g.subject}: ${gradeLabel(g)}\n${fmt(g.date)}${g.note?'\n'+g.note:''}\n\nUsunąć tę ocenę?`)){kid.grades=kid.grades.filter(x=>x!==g);save();render()}
   }
   else if(act==='att'){
     const day=db.attendance[attDate]=db.attendance[attDate]||{};
