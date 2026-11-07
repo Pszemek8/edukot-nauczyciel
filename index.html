@@ -171,6 +171,27 @@ dialog h3{font-family:'Caveat',cursive;font-size:28px;margin:0 0 6px;color:var(-
 :root.dark .emojis span { background:#202a3d; color:#edf0fa; border-color:#465675; }
 
 
+/* Material You – pasek nawigacji zawsze przy dole ekranu */
+@media(min-width:701px){
+  body{padding-bottom:100px}
+  nav#nav{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:16px;z-index:30;width:min(1100px,calc(100% - 40px));
+    display:flex;justify-content:space-around;gap:6px;padding:9px 12px;
+    background:color-mix(in srgb,var(--soft) 92%,white 8%);
+    border:1px solid var(--line);border-radius:24px;
+    box-shadow:0 5px 24px #0002;backdrop-filter:blur(18px)
+  }
+  nav#nav button{
+    flex:1;min-width:0;padding:12px 8px;border:0;border-radius:16px;
+    background:transparent;color:var(--ink);font:inherit;white-space:nowrap
+  }
+  nav#nav button.active{background:#dce4ff;color:#263d78;font-weight:bold}
+  :root.dark nav#nav{background:#202a3dee;border-color:#465675}
+  :root.dark nav#nav button{color:#edf0fa}
+  :root.dark nav#nav button.active{background:#394b70;color:#fff}
+}
+
 /* Material You – wygodna nawigacja mobilna */
 @media(max-width:700px){
   body{padding-bottom:calc(78px + env(safe-area-inset-bottom));}
