@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
-<link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>EduKot 2.0 – Panel nauczyciela</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -333,30 +333,7 @@ $('#forgot').onclick=()=>{
   if(confirm('Reset PIN-u usunie WSZYSTKIE dane z tego urządzenia (oceny, obecności, uwagi) i odłączy synchronizację. Na pewno?')){
     localStorage.removeItem(KEY);localStorage.removeItem(SYNC_KEY);localStorage.removeItem(LOCAL_PIN_KEY);localPinHash=DEFAULT_LOCAL_PIN_HASH;db=fresh();setStatus('💾 tylko w tej przeglądarce');const savedTheme=localStorage.getItem('kotyTheme')||'light';
 document.documentElement.classList.toggle('dark',savedTheme==='dark');
-if('serviceWorker' in navigator){
-  window.addEventListener('load', async ()=>{
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-      // Sprawdź, czy na serwerze jest nowsza wersja aplikacji.
-      await registration.update();
-      // Sprawdzaj ponownie, gdy użytkownik wraca do aplikacji.
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) registration.update().catch(() => {});
-      });
-      window.addEventListener('online', () => registration.update().catch(() => {}));
-      // Nowy Service Worker aktywuje się automatycznie; odśwież stronę,
-      // aby załadować najnowsze pliki aplikacji.
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (refreshing) return;
-        refreshing = true;
-        window.location.reload();
-      });
-    } catch (error) {
-      console.warn('Nie udało się sprawdzić aktualizacji PWA:', error);
-    }
-  });
-}
+
 pinMode();
   }
 };
@@ -711,6 +688,23 @@ window.addEventListener('online',syncNow);
 setStatus(hasCode()?'☁️ łączę…':'💾 tylko w tej przeglądarce');
 
 pinMode();
+
+// Rejestracja PWA przy zwykłym uruchomieniu aplikacji (wymagana do instalacji na Androidzie).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+      await registration.update();
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) registration.update().catch(() => {});
+      });
+      window.addEventListener('online', () => registration.update().catch(() => {}));
+    } catch (error) {
+      console.warn('Nie udało się uruchomić PWA:', error);
+    }
+  });
+}
+
 </script>
 </body>
 </html>
