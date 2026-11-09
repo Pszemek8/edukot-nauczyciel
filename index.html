@@ -512,7 +512,7 @@ function vUstawienia(){
   <h2 style="margin-top:22px">Wygląd 🌙</h2>
   <div class="toolbar"><button class="btn" type="button" data-act="toggleTheme" id="themeToggle">🌙 Włącz ciemny motyw</button></div>
   <h2 style="margin-top:22px">Synchronizacja ☁️</h2>
-  <p class="note">Kod synchronizacji łączy urządzenia z tym samym dziennikiem. Przy pierwszym połączeniu ustawisz PIN dla tego kodu. Na pozostałych urządzeniach wpisz ten sam kod i ten sam PIN. Wygrywa ostatnia zmiana, więc nie edytuj dziennika na dwóch urządzeniach naraz.</p>
+  <p class="note">Kod synchronizacji łączy urządzenia z tym samym dziennikiem. Wpisz ten sam kod na każdym urządzeniu — dodatkowy PIN synchronizacji nie jest już potrzebny. Wygrywa ostatnia zmiana, więc nie edytuj dziennika na dwóch urządzeniach naraz.</p>
   <div class="toolbar"><input type="password" id="syncCode" placeholder="kod synchronizacji" autocomplete="off" style="max-width:240px" value="${esc(localStorage.getItem(SYNC_KEY)||'')}">
   <button class="btn primary" data-act="synclink">${hasCode()?'Zapisz kod':'Połącz'}</button>
   ${hasCode()?'<button class="btn" data-act="syncnow">Synchronizuj teraz</button><button class="btn danger" data-act="syncoff">Odłącz</button>':''}</div>
@@ -680,39 +680,23 @@ async function linkSync(){
   localStorage.setItem(SYNC_KEY,v);setStatus('⏳ sprawdzam kod…');
   try{
     const remote=(await api('GET')).data;
-    let sharedHash=remote&&remote.pinHash;
-    if(sharedHash){
-      const entered=prompt('Ten kod ma już ustawiony PIN. Wpisz PIN tego dziennika (4 cyfry):');
-      if(entered===null)throw new Error('Anulowano łączenie');
-      if(!/^\d{4}$/.test(entered)||await hash(entered)!==sharedHash){
-        throw new Error('PIN nie pasuje do tego kodu synchronizacji.');
-      }
-      if(remote.updatedAt>(db.updatedAt||0)){
-        db=Object.assign(fresh(),remote);
-        persist();
-      }else{
-        db.pinHash=sharedHash;
-        await api('PUT',db);
-      }
+    // Starsze wersje zapisywały hash PIN-u synchronizacji.
+    // Nie jest już używany — kod synchronizacji sam łączy urządzenia.
+    if(remote&&remote.pinHash){
+      delete remote.pinHash;
+    }
+    if(remote && (remote.updatedAt||0) > (db.updatedAt||0)){
+      db=Object.assign(fresh(),remote);
+      delete db.pinHash;
+      persist();
     }else{
-      if(remote && (remote.updatedAt||0) > (db.updatedAt||0)){
-        db=Object.assign(fresh(),remote);
-        persist();
-      }
-      const first=prompt('Ustaw PIN dla tego kodu synchronizacji (4 cyfry):');
-      if(first===null)throw new Error('Anulowano łączenie');
-      if(!/^\d{4}$/.test(first))throw new Error('PIN musi mieć dokładnie 4 cyfry.');
-      const second=prompt('Wpisz PIN ponownie, żeby go potwierdzić:');
-      if(second===null)throw new Error('Anulowano łączenie');
-      if(first!==second)throw new Error('PIN-y są różne. Spróbuj ponownie.');
-      db.pinHash=await hash(first);
+      delete db.pinHash;
       db.updatedAt=Date.now();
       await api('PUT',db);
     }
     setStatus('☁️ połączono');
-    alert('Połączono! Ten kod synchronizacji ma teraz własny PIN. Na każdym kolejnym urządzeniu wpisz ten sam kod i PIN.');
+    alert('Połączono! Na pozostałych urządzeniach wpisz ten sam kod synchronizacji — bez dodatkowego PIN-u.');
     render();
-    if(remote&&remote.updatedAt>(db.updatedAt||0)){db=Object.assign(fresh(),remote);persist();render()}
     syncNow();
   }catch(e){
     if(previous)localStorage.setItem(SYNC_KEY,previous);else localStorage.removeItem(SYNC_KEY);
