@@ -241,7 +241,7 @@ dialog h3{font-family:'Caveat',cursive;font-size:28px;margin:0 0 6px;color:var(-
     <header class="top">
       <div class="logo">🐾</div>
       <div>
-        <h1>EduKot 2.7.0</h1>
+        <h1 id="schoolName">EduKot</h1>
         <small id="className">Panel nauczyciela · Nauka z pazurem!</small>
       </div>
       <div class="sp"></div>
@@ -362,7 +362,7 @@ $('#nav').addEventListener('click',e=>{
 });
 
 function render(){
-  if($('#schoolName'))$('#schoolName').textContent='EduKot 2.0';if($('#className'))$('#className').textContent=db.klass;
+  if($('#schoolName'))$('#schoolName').textContent=db.school||'EduKot';if($('#className'))$('#className').textContent=db.klass;
   document.title='EduKot 2.7.0 – Panel nauczyciela';
   [...$('#nav').children].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
@@ -483,6 +483,8 @@ document.addEventListener('click',async e=>{
 });
 function vUstawienia(){
   return`<h2>Ustawienia ⚙️</h2>
+  <h2 style="margin-top:22px">Informacje ℹ️</h2>
+  <div class="row"><strong>Wersja EduKot:</strong> <span>2.7.0</span></div>
   <h2 style="margin-top:22px">Szkoła</h2>
   <div class="grid2"><div><label>Nazwa przedszkola</label><input type="text" id="setSchool" value="${esc(db.school)}"></div>
   <div><label>Nazwa grupy</label><input type="text" id="setClass" value="${esc(db.klass)}"></div></div>
