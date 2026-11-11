@@ -708,6 +708,32 @@ if ('serviceWorker' in navigator) {
 }
 
 </script>
+
+<script type="module">
+  import liquidGL from "https://cdn.jsdelivr.net/npm/liquid-gl@3.0.0/liquidGL.js";
+
+  window.addEventListener("load", () => {
+    const nav = document.querySelector("#nav");
+    if (!nav || typeof liquidGL !== "function") return;
+
+    liquidGL({
+      target: "#nav",
+      snapshot: "body",
+      engine: "auto",
+      resolution: 1.5,
+      refraction: 0.018,
+      bevelDepth: 0.08,
+      bevelWidth: 0.14,
+      frost: 0,
+      shadow: false,
+      specular: true,
+      reveal: "fade",
+      tilt: false,
+      tint: "rgba(255, 255, 255, 0.10)"
+    });
+  });
+</script>
+
 <div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 2.7.0</div>
 </body>
 </html>
