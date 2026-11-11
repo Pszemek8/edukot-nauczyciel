@@ -10,7 +10,7 @@
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<title>EduKot 3.0.1 – Panel nauczyciela</title>
+<title>EduKot 3.0.2 – Panel nauczyciela</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
@@ -145,10 +145,10 @@ dialog h3{font-family:'Caveat',cursive;font-size:28px;margin:0 0 6px;color:var(-
 :root.dark main { background-color:var(--paper); color:var(--ink); }
 :root.dark nav { background:#202a3d; border-bottom-color:#718acb; }
 :root.dark nav button {
-  background:#293650; color:#edf0fa; border-color:#465675;
+  background:transparent; color:#edf0fa; border-color:transparent;
 }
 :root.dark nav button.active {
-  background:var(--paper); color:#ffffff; border-color:#91aaff;
+  background:transparent; color:#ffffff; border-color:transparent;
 }
 :root.dark .row,
 :root.dark .entry {
@@ -353,6 +353,7 @@ function drawNav(){
   const small=window.matchMedia('(max-width:700px)').matches;
   $('#nav').innerHTML=`<div id="navGlass" aria-hidden="true"></div>`+(small?MOBILE_TABS.slice(0,4).map(([id,icon,label])=>`<button data-tab="${id}" aria-label="${label}"><span>${icon}</span><span>${label}</span></button>`).join('')+`<button data-tab="more" aria-label="Więcej"><span>•••</span><span>Więcej</span></button>`:TABS.map(([id,l])=>{const parts=l.match(/^(\S+)\s+(.+)$/);return `<button data-tab="${id}"><span>${parts?parts[1]:''}</span><span>${parts?parts[2]:l}</span></button>`}).join(''));
   [...$('#nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  requestAnimationFrame(()=>window.initEduKotLiquidGlass?.());
 }
 drawNav();
 window.addEventListener('resize',drawNav);
@@ -371,7 +372,7 @@ $('#nav').addEventListener('click',e=>{
 
 function render(){
   if($('#schoolName'))$('#schoolName').textContent=db.school||'EduKot';if($('#className'))$('#className').textContent=db.klass;
-  document.title='EduKot 3.0.1 – Panel nauczyciela';
+  document.title='EduKot 3.0.2 – Panel nauczyciela';
   [...$('#nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
 }
@@ -492,7 +493,7 @@ document.addEventListener('click',async e=>{
 function vUstawienia(){
   return`<h2>Ustawienia ⚙️</h2>
   <h2 style="margin-top:22px">Informacje ℹ️</h2>
-  <div class="row"><strong>Wersja EduKot:</strong> <span>3.0.1</span></div>
+  <div class="row"><strong>Wersja EduKot:</strong> <span>3.0.2</span></div>
   <h2 style="margin-top:22px">Szkoła</h2>
   <div class="grid2"><div><label>Nazwa przedszkola</label><input type="text" id="setSchool" value="${esc(db.school)}"></div>
   <div><label>Nazwa grupy</label><input type="text" id="setClass" value="${esc(db.klass)}"></div></div>
@@ -718,36 +719,42 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <script type="module">
-  import liquidGL from "https://cdn.jsdelivr.net/npm/liquid-gl@3.0.1/liquidGL.js";
+  import liquidGL from "https://cdn.jsdelivr.net/npm/liquid-gl@3.0.2/liquidGL.js";
 
-  window.addEventListener("load", () => {
+  let navGlassInstance = null;
+  window.initEduKotLiquidGlass = () => {
     const nav = document.querySelector("#nav");
-    if (!nav || typeof liquidGL !== "function") return;
-
-    liquidGL({
+    const glass = document.querySelector("#navGlass");
+    if (!nav || !glass || typeof liquidGL !== "function") return;
+    navGlassInstance?.destroy();
+    navGlassInstance = liquidGL({
       target: "#navGlass",
       snapshot: "body",
       engine: "auto",
       resolution: 1.5,
-      refraction: 0.018,
-      bevelDepth: 0.08,
-      bevelWidth: 0.14,
+      refraction: 0.035,
+      bevelDepth: 0.14,
+      bevelWidth: 0.18,
       frost: 0,
-      shadow: false,
+      shadow: true,
       specular: true,
       reveal: "fade",
       tilt: false,
+      interaction: "fluid",
+      interactionStrength: 0.45,
+      interactionRadius: 0.42,
+      interactionViscosity: 0.68,
       tint: "rgba(255, 255, 255, 0.10)",
       on: {
         init() {
-          // Warstwa Liquid Glass leży pod przyciskami; kliknięcia pozostają aktywne.
           nav.style.pointerEvents = "auto";
         }
       }
     });
-  });
+  };
+  window.addEventListener("load", () => requestAnimationFrame(() => window.initEduKotLiquidGlass?.()));
 </script>
 
-<div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 3.0.1</div>
+<div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 3.0.2</div>
 </body>
 </html>
