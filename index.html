@@ -10,7 +10,7 @@
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<title>EduKot 3.0.5 – Panel nauczyciela</title>
+<title>EduKot 3.0.6 – Panel nauczyciela</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
@@ -396,9 +396,10 @@ $('#nav').addEventListener('click',e=>{
 
 function render(){
   if($('#schoolName'))$('#schoolName').textContent=db.school||'EduKot';if($('#className'))$('#className').textContent=db.klass;
-  document.title='EduKot 3.0.5 – Panel nauczyciela';
+  document.title='EduKot 3.0.6 – Panel nauczyciela';
   [...$('#nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  snapNavLens(activeNavIndex(),true);
+  if (window.eduKotLiquidGlassSync) window.eduKotLiquidGlassSync();
+  else snapNavLens(activeNavIndex(),true);
   $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
 }
 const noKids=()=>`<div class="empty">Nie ma jeszcze żadnych kotków 🐾<br><br><button class="btn primary" data-act="goklasa">Dodaj pierwszego kotka</button></div>`;
@@ -518,7 +519,7 @@ document.addEventListener('click',async e=>{
 function vUstawienia(){
   return`<h2>Ustawienia ⚙️</h2>
   <h2 style="margin-top:22px">Informacje ℹ️</h2>
-  <div class="row"><strong>Wersja EduKot:</strong> <span>3.0.5</span></div>
+  <div class="row"><strong>Wersja EduKot:</strong> <span>3.0.6</span></div>
   <h2 style="margin-top:22px">Szkoła</h2>
   <div class="grid2"><div><label>Nazwa przedszkola</label><input type="text" id="setSchool" value="${esc(db.school)}"></div>
   <div><label>Nazwa grupy</label><input type="text" id="setClass" value="${esc(db.klass)}"></div></div>
@@ -798,12 +799,20 @@ if ('serviceWorker' in navigator) {
         }
       }
     });
+    if (typeof liquidGL.registerDynamic === "function") liquidGL.registerDynamic(tabs);
     nav.style.pointerEvents = "auto";
     snapNavLens(activeIndex, false);
+    window.eduKotLiquidGlassSync = () => {
+      activeIndex = activeNavIndex();
+      snapNavLens(activeIndex, true);
+    };
   };
-  window.addEventListener("load", () => requestAnimationFrame(() => window.initEduKotLiquidGlass?.()));
+  window.addEventListener("load", () => requestAnimationFrame(() => {
+    window.initEduKotLiquidGlass?.();
+    if (typeof liquidGL.syncWith === "function") liquidGL.syncWith();
+  }));
 </script>
 
-<div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 3.0.5</div>
+<div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 3.0.6</div>
 </body>
 </html>
