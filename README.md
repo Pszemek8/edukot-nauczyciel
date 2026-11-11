@@ -1,4 +1,4 @@
-# EduKot 2.0 – Panel nauczyciela
+# EduKot  – Panel nauczyciela
 
 ## Wdrożenie
 Wgraj cały folder projektu do Vercel (lub użyj Vercel CLI z tego folderu). Nie wrzucaj samego `index.html` — wymagane są też `api/`, `icons/`, `manifest.webmanifest` i `sw.js`.
