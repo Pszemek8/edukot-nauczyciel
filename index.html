@@ -10,7 +10,7 @@
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<title>EduKot 2.6 – Panel nauczyciela</title>
+<title>EduKot 2.6.0 – Panel nauczyciela</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
@@ -241,7 +241,7 @@ dialog h3{font-family:'Caveat',cursive;font-size:28px;margin:0 0 6px;color:var(-
     <header class="top">
       <div class="logo">🐾</div>
       <div>
-        <h1>EduKot 2.6</h1>
+        <h1>EduKot 2.6.0</h1>
         <small id="className">Panel nauczyciela · Nauka z pazurem!</small>
       </div>
       <div class="sp"></div>
@@ -363,7 +363,7 @@ $('#nav').addEventListener('click',e=>{
 
 function render(){
   if($('#schoolName'))$('#schoolName').textContent='EduKot 2.0';if($('#className'))$('#className').textContent=db.klass;
-  document.title='EduKot 2.6 – Panel nauczyciela';
+  document.title='EduKot 2.6.0 – Panel nauczyciela';
   [...$('#nav').children].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
 }
@@ -706,6 +706,6 @@ if ('serviceWorker' in navigator) {
 }
 
 </script>
-<div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 2.6</div>
+<div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 2.6.0</div>
 </body>
 </html>
