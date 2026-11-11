@@ -729,7 +729,13 @@ if ('serviceWorker' in navigator) {
       specular: true,
       reveal: "fade",
       tilt: false,
-      tint: "rgba(255, 255, 255, 0.10)"
+      tint: "rgba(255, 255, 255, 0.10)",
+      on: {
+        init() {
+          // liquidGL wyłącza klikanie na elemencie efektu; przywracamy je dla przycisków paska.
+          nav.style.pointerEvents = "auto";
+        }
+      }
     });
   });
 </script>
