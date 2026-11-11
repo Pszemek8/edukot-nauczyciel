@@ -10,7 +10,7 @@
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<title>EduKot 3.0.0 – Panel nauczyciela</title>
+<title>EduKot 3.0.1 – Panel nauczyciela</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
@@ -220,6 +220,12 @@ dialog h3{font-family:'Caveat',cursive;font-size:28px;margin:0 0 6px;color:var(-
   .btn{min-height:38px}
 }
 </style>
+<script>
+  // Przywróć wybrany motyw przed wyświetleniem strony.
+  try {
+    document.documentElement.classList.toggle('dark', localStorage.getItem('kotyTheme') === 'dark');
+  } catch {}
+</script>
 </head>
 <body>
 
@@ -363,7 +369,7 @@ $('#nav').addEventListener('click',e=>{
 
 function render(){
   if($('#schoolName'))$('#schoolName').textContent=db.school||'EduKot';if($('#className'))$('#className').textContent=db.klass;
-  document.title='EduKot 3.0.0 – Panel nauczyciela';
+  document.title='EduKot 3.0.1 – Panel nauczyciela';
   [...$('#nav').children].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
 }
@@ -484,12 +490,12 @@ document.addEventListener('click',async e=>{
 function vUstawienia(){
   return`<h2>Ustawienia ⚙️</h2>
   <h2 style="margin-top:22px">Informacje ℹ️</h2>
-  <div class="row"><strong>Wersja EduKot:</strong> <span>3.0.0</span></div>
+  <div class="row"><strong>Wersja EduKot:</strong> <span>3.0.1</span></div>
   <h2 style="margin-top:22px">Szkoła</h2>
   <div class="grid2"><div><label>Nazwa przedszkola</label><input type="text" id="setSchool" value="${esc(db.school)}"></div>
   <div><label>Nazwa grupy</label><input type="text" id="setClass" value="${esc(db.klass)}"></div></div>
   <h2 style="margin-top:22px">Wygląd 🌙</h2>
-  <div class="toolbar"><button class="btn" type="button" data-act="toggleTheme" id="themeToggle">🌙 Włącz ciemny motyw</button></div>
+  <div class="toolbar"><button class="btn" type="button" data-act="toggleTheme" id="themeToggle">${document.documentElement.classList.contains('dark')?'☀️ Włącz jasny motyw':'🌙 Włącz ciemny motyw'}</button></div>
   <h2 style="margin-top:22px">Synchronizacja ☁️</h2>
   <p class="note">Kod synchronizacji łączy urządzenia z tym samym dziennikiem. Wpisz ten sam kod na każdym urządzeniu — dodatkowy PIN synchronizacji nie jest już potrzebny. Wygrywa ostatnia zmiana, więc nie edytuj dziennika na dwóch urządzeniach naraz.</p>
   <div class="toolbar"><input type="password" id="syncCode" placeholder="kod synchronizacji" autocomplete="off" style="max-width:240px" value="${esc(localStorage.getItem(SYNC_KEY)||'')}">
@@ -710,7 +716,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <script type="module">
-  import liquidGL from "https://cdn.jsdelivr.net/npm/liquid-gl@3.0.0/liquidGL.js";
+  import liquidGL from "https://cdn.jsdelivr.net/npm/liquid-gl@3.0.1/liquidGL.js";
 
   window.addEventListener("load", () => {
     const nav = document.querySelector("#nav");
@@ -740,6 +746,6 @@ if ('serviceWorker' in navigator) {
   });
 </script>
 
-<div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 3.0.0</div>
+<div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 3.0.1</div>
 </body>
 </html>
