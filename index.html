@@ -351,10 +351,11 @@ pinMode();
 const TABS=[['oceny','📒 Oceny'],['obecnosc','✅ Obecność'],['tematy','📚 Tematy zajęć'],['uwagi','⭐ Uwagi'],['kotki','🐱 Kotki'],['sprawdziany','📝 Sprawdziany'],['historia','🕘 Historia ocen'],['kody','🔐 Kody rodziców'],['ustawienia','⚙️ Ustawienia']];
 let tab='oceny',attDate=today(),remarkKid='';
 const MOBILE_TABS=[['oceny','📒','Oceny'],['obecnosc','✅','Obecność'],['tematy','📚','Tematy'],['kotki','🐱','Kotki'],['uwagi','⭐','Uwagi'],['sprawdziany','📝','Sprawdziany'],['historia','🕘','Historia'],['kody','🔐','Kody'],['ustawienia','⚙️','Ustawienia']];
+function isMoreTabActive(){return window.matchMedia('(max-width:700px)').matches&&!MOBILE_TABS.slice(0,4).some(([id])=>id===tab)}
 function drawNav(){
   const small=window.matchMedia('(max-width:700px)').matches;
   $('#nav').innerHTML=(small?MOBILE_TABS.slice(0,4).map(([id,icon,label])=>`<button data-tab="${id}" aria-label="${label}"><span>${icon}</span><span>${label}</span></button>`).join('')+`<button data-tab="more" aria-label="Więcej"><span>•••</span><span>Więcej</span></button>`:TABS.map(([id,l])=>{const parts=l.match(/^(\S+)\s+(.+)$/);return `<button data-tab="${id}"><span>${parts?parts[1]:''}</span><span>${parts?parts[2]:l}</span></button>`}).join(''))+`<div id="navLens" aria-hidden="true"></div>`;
-  [...$('#nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  [...$('#nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab||(b.dataset.tab==='more'&&isMoreTabActive())));
   requestAnimationFrame(()=>window.initEduKotLiquidGlass?.());
 }
 function activeNavIndex(){
@@ -796,7 +797,6 @@ if ('serviceWorker' in navigator) {
         }
       }
     });
-    tabs.forEach((button,i)=>button.addEventListener("click",()=>snapTo(i,true)));
     nav.style.pointerEvents = "auto";
     snapNavLens(activeIndex, false);
   };
