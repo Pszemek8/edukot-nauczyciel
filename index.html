@@ -82,9 +82,6 @@ header.top .btn{border-color:#fff}
 nav{display:flex;flex-wrap:wrap;gap:4px;padding:10px 14px 0;background:transparent;border-bottom:3px solid var(--blue);position:relative;isolation:isolate}
 nav button{position:relative;z-index:1;background:transparent;border:2px solid transparent;border-bottom:none;padding:7px 14px;border-radius:10px 10px 0 0;cursor:pointer}
 nav button.active{background:transparent;border-color:transparent;font-weight:bold;position:relative;top:0;padding-bottom:7px}
-#navLens{position:absolute;z-index:3;top:6px;bottom:6px;left:8px;width:84px;border-radius:999px;pointer-events:auto;touch-action:none;cursor:grab;will-change:left,width,transform;background:rgba(255,255,255,.24);border:1px solid rgba(255,255,255,.58);box-shadow:0 4px 18px rgba(20,30,60,.16),inset 0 1px 1px rgba(255,255,255,.65);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5)}
-:root.dark #navLens{background:rgba(160,180,230,.18);border-color:rgba(210,220,255,.28);box-shadow:0 4px 18px rgba(0,0,0,.25),inset 0 1px 1px rgba(255,255,255,.18)}
-#navLens:active{cursor:grabbing}
 nav button{z-index:0}
 main{flex:1;padding:18px 24px 28px 52px;position:relative;
   background-image:repeating-linear-gradient(transparent 0 33px,var(--line) 33px 34px);
@@ -357,7 +354,6 @@ function drawNav(){
   const small=window.matchMedia('(max-width:700px)').matches;
   $('#nav').innerHTML=(small?MOBILE_TABS.slice(0,4).map(([id,icon,label])=>`<button data-tab="${id}" aria-label="${label}"><span>${icon}</span><span>${label}</span></button>`).join('')+`<button data-tab="more" aria-label="Więcej"><span>•••</span><span>Więcej</span></button>`:TABS.map(([id,l])=>{const parts=l.match(/^(\S+)\s+(.+)$/);return `<button data-tab="${id}"><span>${parts?parts[1]:''}</span><span>${parts?parts[2]:l}</span></button>`}).join(''))+`<div id="navLens" aria-hidden="true"></div>`;
   [...$('#nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab||(b.dataset.tab==='more'&&isMoreTabActive())));
-  requestAnimationFrame(()=>window.initEduKotLiquidGlass?.());
 }
 function activeNavIndex(){
   const buttons=[...$('#nav').querySelectorAll('button')];
@@ -398,8 +394,6 @@ function render(){
   if($('#schoolName'))$('#schoolName').textContent=db.school||'EduKot';if($('#className'))$('#className').textContent=db.klass;
   document.title='EduKot 3.0.6 – Panel nauczyciela';
   [...$('#nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  if (window.eduKotLiquidGlassSync) window.eduKotLiquidGlassSync();
-  else snapNavLens(activeNavIndex(),true);
   $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
 }
 const noKids=()=>`<div class="empty">Nie ma jeszcze żadnych kotków 🐾<br><br><button class="btn primary" data-act="goklasa">Dodaj pierwszego kotka</button></div>`;
@@ -742,75 +736,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-<script type="module">
-  import liquidGL from "https://cdn.jsdelivr.net/npm/liquid-gl@3.0.2/liquidGL.js";
-
-  let navGlassInstance = null;
-  window.initEduKotLiquidGlass = () => {
-    const nav = document.querySelector("#nav");
-    const lens = document.querySelector("#navLens");
-    if (!nav || !lens || typeof liquidGL !== "function") return;
-    navGlassInstance?.destroy();
-    const tabs = [...nav.querySelectorAll("button")];
-    let activeIndex = activeNavIndex();
-    let lastX = 0;
-    const snapTo = (i, animate = true) => {
-      activeIndex = Math.max(0, Math.min(i, tabs.length - 1));
-      setTabFromLens(activeIndex);
-      snapNavLens(activeIndex, animate);
-    };
-    navGlassInstance = liquidGL({
-      target: "#navLens", snapshot: "body", engine: "auto", resolution: 4,
-      refraction: 0.016, aberration: 1, bevelDepth: 0.014, bevelWidth: 0.071,
-      frost: 0, shadow: true, specular: true, reveal: "none", tilt: false,
-      draggable: true, interaction: "fluid", interactionStrength: 0.5,
-      interactionRadius: 3, interactionViscosity: 0.25, magnify: 1.05,
-      tint: "rgba(234, 234, 236, 0.24)",
-      on: {
-        init() { snapNavLens(activeIndex, false); },
-        dragstart() {
-          if (window.gsap) { gsap.killTweensOf(lens); gsap.to(lens, {scale:1.2,duration:0.3,ease:"power2.out"}); }
-          lastX = 0;
-        },
-        drag(lensRef, info) {
-          const lr=lens.getBoundingClientRect(), br=nav.getBoundingClientRect();
-          const minLeft=br.left+8, maxLeft=br.right-8-lr.width;
-          const clamped=Math.min(Math.max(lr.left,minLeft),maxLeft);
-          if (window.gsap) gsap.set(lens,{x:info.x+(clamped-lr.left),y:0});
-          if (lastX && window.gsap) {
-            const stretch=Math.min(Math.abs(info.clientX-lastX)*0.02,0.35);
-            gsap.set(lens,{width:tabs[activeIndex].offsetWidth*(1+stretch)});
-          }
-          lastX=info.clientX;
-        },
-        dragend(lensRef) {
-          const lr=lens.getBoundingClientRect(), center=lr.left+lr.width/2;
-          const restingLeft=lens.offsetLeft+(window.gsap?gsap.getProperty(lens,"x"):0);
-          if (lensRef.clearDrag) lensRef.clearDrag();
-          lens.style.left=restingLeft+"px";
-          if (window.gsap) gsap.set(lens,{x:0,y:0}); else lens.style.transform="";
-          let nearest=0,best=Infinity;
-          tabs.forEach((t,i)=>{const tr=t.getBoundingClientRect(),d=Math.abs(tr.left+tr.width/2-center);if(d<best){best=d;nearest=i;}});
-          snapTo(nearest,true);
-          if (window.gsap) gsap.to(lens,{scale:1,duration:0.7,ease:"elastic.out(1, 0.7)"});
-        }
-      }
-    });
-    if (typeof liquidGL.registerDynamic === "function") liquidGL.registerDynamic(tabs);
-    nav.style.pointerEvents = "auto";
-    snapNavLens(activeIndex, false);
-    window.eduKotLiquidGlassSync = () => {
-      activeIndex = activeNavIndex();
-      snapNavLens(activeIndex, true);
-    };
-  };
-  window.addEventListener("load", () => requestAnimationFrame(() => {
-    window.initEduKotLiquidGlass?.();
-    if (typeof liquidGL.syncWith === "function") liquidGL.syncWith();
-  }));
 </script>
 
 <div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 3.0.6</div>
