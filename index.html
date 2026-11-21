@@ -82,6 +82,8 @@ header.top .btn{border-color:#fff}
 nav{display:flex;flex-wrap:wrap;gap:4px;padding:10px 14px 0;background:transparent;border-bottom:3px solid var(--blue);position:relative;isolation:isolate}
 nav button{position:relative;z-index:1;background:transparent;border:2px solid transparent;border-bottom:none;padding:7px 14px;border-radius:10px 10px 0 0;cursor:pointer}
 nav button.active{background:transparent;border-color:transparent;font-weight:bold;position:relative;top:0;padding-bottom:7px}
+#navLens{position:absolute;z-index:0;left:0;top:4px;height:calc(100% - 8px);border-radius:16px;pointer-events:none;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);box-shadow:0 4px 18px rgba(20,30,60,.14)}
+:root.dark #navLens{background:rgba(160,180,230,.18);border-color:rgba(210,220,255,.25)}
 nav button{z-index:0}
 main{flex:1;padding:18px 24px 28px 52px;position:relative;
   background-image:repeating-linear-gradient(transparent 0 33px,var(--line) 33px 34px);
@@ -209,7 +211,7 @@ dialog h3{font-family:'Caveat',cursive;font-size:28px;margin:0 0 6px;color:var(-
     display:flex;justify-content:space-around;gap:2px;padding:7px 5px;
     background:transparent;border:1px solid var(--line);
     border-radius:24px;box-shadow:0 5px 22px #0002;}
-  nav#nav button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  nav#nav button{position:relative;z-index:1;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
     padding:7px 2px;border:0;border-radius:17px;background:transparent;color:var(--ink);
     font-size:11px;line-height:1.1;white-space:normal;}
   nav#nav button.active{top:0;padding-bottom:7px;background:transparent;color:#263d78;font-weight:bold;}
@@ -350,10 +352,13 @@ const TABS=[['oceny','📒 Oceny'],['obecnosc','✅ Obecność'],['tematy','📚
 let tab='oceny',attDate=today(),remarkKid='';
 const MOBILE_TABS=[['oceny','📒','Oceny'],['obecnosc','✅','Obecność'],['tematy','📚','Tematy'],['kotki','🐱','Kotki'],['uwagi','⭐','Uwagi'],['sprawdziany','📝','Sprawdziany'],['historia','🕘','Historia'],['kody','🔐','Kody'],['ustawienia','⚙️','Ustawienia']];
 function isMoreTabActive(){return window.matchMedia('(max-width:700px)').matches&&!MOBILE_TABS.slice(0,4).some(([id])=>id===tab)}
+function activeNavIndex(){const buttons=[...$('#nav').querySelectorAll('button')];let i=buttons.findIndex(b=>b.dataset.tab===tab);if(i<0)i=buttons.findIndex(b=>b.dataset.tab==='more');return Math.max(0,i)}
+function snapNavLens(index,animate=true){const nav=$('#nav'),lens=$('#navLens'),buttons=[...nav.querySelectorAll('button')];if(!lens||!buttons.length)return;index=Math.max(0,Math.min(index,buttons.length-1));const b=buttons[index],left=b.offsetLeft,width=b.offsetWidth;if(window.gsap){if(animate)gsap.to(lens,{left:left,width:width,duration:.45,ease:'power2.out'});else gsap.set(lens,{left:left,width:width})}else{lens.style.left=left+'px';lens.style.width=width+'px'}}
 function drawNav(){
   const small=window.matchMedia('(max-width:700px)').matches;
-  $('#nav').innerHTML=(small?MOBILE_TABS.slice(0,4).map(([id,icon,label])=>`<button data-tab="${id}" aria-label="${label}"><span>${icon}</span><span>${label}</span></button>`).join('')+`<button data-tab="more" aria-label="Więcej"><span>•••</span><span>Więcej</span></button>`:TABS.map(([id,l])=>{const parts=l.match(/^(\S+)\s+(.+)$/);return `<button data-tab="${id}"><span>${parts?parts[1]:''}</span><span>${parts?parts[2]:l}</span></button>`}).join(''));
+  $('#nav').innerHTML=(small?MOBILE_TABS.slice(0,4).map(([id,icon,label])=>`<button data-tab="${id}" aria-label="${label}"><span>${icon}</span><span>${label}</span></button>`).join('')+`<button data-tab="more" aria-label="Więcej"><span>•••</span><span>Więcej</span></button>`:TABS.map(([id,l])=>{const parts=l.match(/^(\S+)\s+(.+)$/);return `<button data-tab="${id}"><span>${parts?parts[1]:''}</span><span>${parts?parts[2]:l}</span></button>`}).join(''))+`<div id="navLens" aria-hidden="true"></div>`;
   [...$('#nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab||(b.dataset.tab==='more'&&isMoreTabActive())));
+  requestAnimationFrame(()=>{snapNavLens(activeNavIndex(),false);window.initEduKotGlass?.()});
 }
 drawNav();
 window.addEventListener('resize',drawNav);
@@ -374,6 +379,7 @@ function render(){
   if($('#schoolName'))$('#schoolName').textContent=db.school||'EduKot';if($('#className'))$('#className').textContent=db.klass;
   document.title='EduKot 3.0.6 – Panel nauczyciela';
   [...$('#nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  snapNavLens(activeNavIndex(),true);
   $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
 }
 const noKids=()=>`<div class="empty">Nie ma jeszcze żadnych kotków 🐾<br><br><button class="btn primary" data-act="goklasa">Dodaj pierwszego kotka</button></div>`;
@@ -716,6 +722,19 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+</script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script type="module">
+import liquidGL from "https://cdn.jsdelivr.net/npm/liquid-gl@3.0.2/liquidGL.js";
+let glass=null;
+window.initEduKotGlass=()=>{
+ const nav=document.querySelector("#nav"),lens=document.querySelector("#navLens");
+ if(!nav||!lens)return;
+ glass?.destroy();
+ glass=liquidGL({target:"#navLens",snapshot:"body",engine:"auto",resolution:3,refraction:.012,aberration:.5,bevelDepth:.04,bevelWidth:.08,frost:0,shadow:true,specular:true,reveal:"none",tilt:false,draggable:false,interaction:"none",magnify:1,tint:"rgba(234,234,236,.22)"});
+ snapNavLens(activeNavIndex(),false);
+};
+window.addEventListener("load",()=>requestAnimationFrame(()=>window.initEduKotGlass?.()));
 </script>
 
 <div style="text-align:center;padding:12px;font-size:13px;opacity:.65">EduKot · Wersja 3.0.6</div>
