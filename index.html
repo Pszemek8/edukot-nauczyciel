@@ -84,6 +84,21 @@ nav{display:flex;flex-wrap:wrap;gap:0;padding:6px 8px;background:#f7f7f7;border-
 nav button{flex:1;min-width:0;background:transparent;border:0;border-radius:0;padding:7px 10px;color:#777;cursor:pointer}
 nav button.active{background:transparent;color:#0878d1;font-weight:bold}
 nav button span{display:block;text-align:center}
+/* iOS 7 – subtelne animacje interfejsu */
+nav#nav button{transition:color .22s ease,transform .18s ease,opacity .22s ease}
+nav#nav button:active{transform:scale(.88);opacity:.72}
+nav#nav button.active span:first-child{animation:iosTabPop .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes iosTabPop{0%{transform:scale(.78)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
+#main.ios-enter{animation:iosPageIn .26s ease-out both;transform-origin:50% 20%}
+@keyframes iosPageIn{from{opacity:0;transform:translateY(9px) scale(.992)}to{opacity:1;transform:translateY(0) scale(1)}}
+.mobile-more{animation:iosMenuIn .2s cubic-bezier(.2,.8,.2,1) both;transform-origin:bottom right}
+.mobile-more button{transition:background .16s ease,transform .16s ease}
+.mobile-more button:active{background:var(--line)!important;transform:scale(.97)}
+@keyframes iosMenuIn{from{opacity:0;transform:translateY(8px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){
+ nav#nav button,#main.ios-enter,.mobile-more,.mobile-more button{animation:none!important;transition:none!important}
+}
+
 main{flex:1;padding:18px 24px 28px 52px;position:relative;
   background-image:repeating-linear-gradient(transparent 0 33px,var(--line) 33px 34px);
 }
@@ -363,7 +378,13 @@ function render(){
   if($('#schoolName'))$('#schoolName').textContent=db.school||'EduKot';if($('#className'))$('#className').textContent=db.klass;
   document.title='EduKot 3.0.6 – Panel nauczyciela';
   [...$('#nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  $('#main').innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
+  const main=$('#main');
+  main.innerHTML={oceny:vOceny,obecnosc:vObecnosc,tematy:vTematy,uwagi:vUwagi,kotki:vKotki,sprawdziany:vSprawdziany,historia:vHistoria,kody:vKody,ustawienia:vUstawienia}[tab]();
+  main.classList.remove('ios-enter');
+  void main.offsetWidth;
+  main.classList.add('ios-enter');
+  const active=$('#nav').querySelector('button.active');
+  if(active){active.classList.remove('ios-replay');void active.offsetWidth;active.classList.add('ios-replay')}
 }
 const noKids=()=>`<div class="empty">Nie ma jeszcze żadnych kotków 🐾<br><br><button class="btn primary" data-act="goklasa">Dodaj pierwszego kotka</button></div>`;
 
