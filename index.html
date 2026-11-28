@@ -242,6 +242,7 @@ nav#nav button.active{background:transparent;color:#0878d1;font-weight:bold}
     <p id="lockMsg"></p>
     <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
     <div class="pad" id="pad"></div>
+    <button class="btn primary hidden" id="passkeyLogin" type="button" style="margin-top:12px;width:100%">🔑 Zaloguj za pomocą Passkey</button>
     <button class="linkbtn" id="forgot">Nie pamiętam PIN-u</button>
   </div>
 </div>
@@ -338,6 +339,50 @@ async function key(k){
   }
 }
 function unlock(){pinBuf='';$('#lock').classList.add('hidden');$('#app').classList.remove('hidden');render();syncNow()}
+async function passkeyRequest(action,body={},pin=''){
+  const response=await fetch('/api/passkey'+(action==='status'?'?action=status':''),{
+    method:action==='status'?'GET':'POST',
+    headers:{'Content-Type':'application/json',...(pin?{'x-teacher-pin':pin}:{})},
+    body:action==='status'?undefined:JSON.stringify({action,...body})
+  });
+  const data=await response.json().catch(()=>({error:'Nieprawidłowa odpowiedź serwera'}));
+  if(!response.ok)throw new Error(data.error||'Błąd Passkey');
+  return data;
+}
+async function refreshPasskeyButton(){
+  try{const state=await passkeyRequest('status');$('#passkeyLogin').classList.toggle('hidden',!state.registered)}
+  catch{$('#passkeyLogin').classList.add('hidden')}
+}
+async function addPasskey(){
+  const pin=prompt('Wpisz PIN nauczyciela, aby dodać Passkey:');
+  if(!pin)return;
+  try{
+    const {startRegistration}=await import('https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13.2.2/+esm');
+    const setup=await passkeyRequest('register-options',{},pin);
+    const response=await startRegistration({optionsJSON:setup.options});
+    await passkeyRequest('register-verify',{flowId:setup.flowId,response},pin);
+    alert('Passkey dodany! Teraz możesz logować się biometrią lub blokadą ekranu urządzenia. 🔑');
+    await refreshPasskeyButton();
+    render();
+  }catch(error){alert('Nie udało się dodać Passkey: '+(error.message||'spróbuj ponownie'))}
+}
+async function loginWithPasskey(){
+  try{
+    const {startAuthentication}=await import('https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13.2.2/+esm');
+    const setup=await passkeyRequest('login-options');
+    const response=await startAuthentication({optionsJSON:setup.options});
+    await passkeyRequest('login-verify',{flowId:setup.flowId,response});
+    unlock();
+  }catch(error){alert('Logowanie Passkey nie powiodło się: '+(error.message||'spróbuj ponownie'))}
+}
+async function removePasskey(){
+  if(!confirm('Usunąć wszystkie zapisane Passkey dla nauczyciela?'))return;
+  const pin=prompt('Wpisz PIN nauczyciela, aby potwierdzić usunięcie:');
+  if(!pin)return;
+  try{await passkeyRequest('remove',{},pin);await refreshPasskeyButton();alert('Passkey usunięty.');render()}
+  catch(error){alert('Nie udało się usunąć Passkey: '+error.message)}
+}
+$('#passkeyLogin').addEventListener('click',loginWithPasskey);
 function lockNow(){if(localStorage.getItem('edukot-pin-disabled')==='1'){unlock();return}$('#app').classList.add('hidden');$('#lock').classList.remove('hidden');pinMode()}
 $('#lockBtn').onclick=lockNow;
 $('#forgot').onclick=()=>{
@@ -506,7 +551,9 @@ function vUstawienia(){
   <h2 style="margin-top:22px">🔐 Blokada aplikacji</h2>
   <p class="note">PIN można wyłączyć na tym urządzeniu. Pamiętaj, że bez PIN-u każdy, kto otworzy dziennik, będzie mógł zobaczyć jego zawartość.</p>
   <div class="toolbar"><button class="btn ${pinDisabled?'primary':'danger'}" type="button" data-act="togglePinLock">${pinDisabled?'🔒 Włącz PIN':'🔓 Wyłącz PIN'}</button><span>${pinDisabled?'PIN wyłączony':'PIN włączony'}</span></div>
-  <p class="note">Passkey (odcisk palca / Face ID) wymaga dodatkowej obsługi serwerowej WebAuthn, dlatego nie włączam tutaj atrapowej funkcji.</p>
+  <h2 style="margin-top:22px">🔑 Passkey</h2>
+  <p class="note">Passkey pozwala logować się odciskiem palca, rozpoznawaniem twarzy lub blokadą ekranu urządzenia. PIN aplikacji nadal pozostaje dostępny jako zapasowa metoda.</p>
+  <div class="toolbar"><button class="btn primary" type="button" data-act="registerPasskey">➕ Dodaj Passkey</button><button class="btn danger" type="button" data-act="removePasskey">Usuń Passkey</button></div>
   <h2 style="margin-top:22px">Informacje ℹ️</h2>
 
   <h2 style="margin-top:22px">Szkoła</h2>
@@ -549,7 +596,9 @@ function kidModal(kid){
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;
   const act=b.dataset.act,kid=db.kids.find(k=>k.id===b.dataset.kid);
-  if(act==='togglePinLock'){const disabled=localStorage.getItem('edukot-pin-disabled')==='1';if(disabled){localStorage.setItem('edukot-pin-disabled','0');alert('PIN włączony.');}else if(confirm('Wyłączyć PIN? Każdy, kto otworzy aplikację na tym urządzeniu, będzie mógł zobaczyć dziennik.')){localStorage.setItem('edukot-pin-disabled','1');alert('PIN wyłączony na tym urządzeniu.');}render();return;}
+  if(act==='registerPasskey'){addPasskey();return;}
+   if(act==='removePasskey'){removePasskey();return;}
+   if(act==='togglePinLock'){const disabled=localStorage.getItem('edukot-pin-disabled')==='1';if(disabled){localStorage.setItem('edukot-pin-disabled','0');alert('PIN włączony.');}else if(confirm('Wyłączyć PIN? Każdy, kto otworzy aplikację na tym urządzeniu, będzie mógł zobaczyć dziennik.')){localStorage.setItem('edukot-pin-disabled','1');alert('PIN wyłączony na tym urządzeniu.');}render();return;}
   if(act==='toggleTheme'){
     const dark=!document.documentElement.classList.contains('dark');
     document.documentElement.classList.toggle('dark',dark);
@@ -715,6 +764,7 @@ window.addEventListener('online',syncNow);
 setStatus(hasCode()?'☁️ łączę…':'💾 tylko w tej przeglądarce');
 
 pinMode();
+refreshPasskeyButton();
 if(localStorage.getItem('edukot-pin-disabled')==='1')unlock();
 
 // Rejestracja PWA przy zwykłym uruchomieniu aplikacji (wymagana do instalacji na Androidzie).
