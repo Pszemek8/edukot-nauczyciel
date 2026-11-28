@@ -111,9 +111,9 @@ export default async function handler(req, res) {
     }
 
     if (action === "register-options" && req.method === "POST") {
-      if (!(await teacherAuth(req, res))) return;
       const { origin, rpID } = requestOrigin(req);
       const list = await credentials();
+      if (list.length) return send(res, 409, { error: "Passkey jest już dodany. Usuń go przed dodaniem nowego." });
       const options = await generateRegistrationOptions({
         rpName: "EduKot",
         rpID,
@@ -130,7 +130,6 @@ export default async function handler(req, res) {
     }
 
     if (action === "register-verify" && req.method === "POST") {
-      if (!(await teacherAuth(req, res))) return;
       const saved = await takeChallenge(String(body.flowId || ""), "register");
       if (!saved) return send(res, 400, { error: "Rejestracja wygasła. Spróbuj ponownie." });
       const verification = await verifyRegistrationResponse({
