@@ -36,16 +36,25 @@ function requestOrigin(req) {
   return { origin: parsed.origin, rpID: parsed.hostname };
 }
 
-function teacherAuth(req, res) {
+async function teacherAuth(req, res) {
   const expected = process.env.EDUKOT_TEACHER_PIN;
   if (!expected) {
     send(res, 503, { error: "Brakuje EDUKOT_TEACHER_PIN w Vercel → Settings → Environment Variables." });
+    return false;
+  }
+  const ip = String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "?").split(",")[0].trim();
+  const limitKey = "edukot:passkey:pin-attempts:" + hash(ip);
+  const attempts = Number(await redis(["GET", limitKey])) || 0;
+  if (attempts >= 10) {
+    send(res, 429, { error: "Za dużo prób. Spróbuj ponownie za 15 minut." });
     return false;
   }
   const supplied = String(req.headers["x-teacher-pin"] || "");
   const a = Buffer.from(hash(supplied));
   const b = Buffer.from(hash(expected));
   if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    const next = await redis(["INCR", limitKey]);
+    if (Number(next) === 1) await redis(["EXPIRE", limitKey, 900]);
     send(res, 401, { error: "Nieprawidłowy PIN nauczyciela." });
     return false;
   }
@@ -102,7 +111,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "register-options" && req.method === "POST") {
-      if (!teacherAuth(req, res)) return;
+      if (!(await teacherAuth(req, res))) return;
       const { origin, rpID } = requestOrigin(req);
       const list = await credentials();
       const options = await generateRegistrationOptions({
@@ -121,7 +130,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "register-verify" && req.method === "POST") {
-      if (!teacherAuth(req, res)) return;
+      if (!(await teacherAuth(req, res))) return;
       const saved = await takeChallenge(String(body.flowId || ""), "register");
       if (!saved) return send(res, 400, { error: "Rejestracja wygasła. Spróbuj ponownie." });
       const verification = await verifyRegistrationResponse({
@@ -190,7 +199,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "remove" && req.method === "POST") {
-      if (!teacherAuth(req, res)) return;
+      if (!(await teacherAuth(req, res))) return;
       await redis(["DEL", CREDENTIALS_KEY]);
       return send(res, 200, { ok: true });
     }
