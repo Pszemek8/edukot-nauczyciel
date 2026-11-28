@@ -32,6 +32,23 @@ export default async function handler(req, res) {
   const redisKey = "dziennik-kotow:sync:" + keyHash;
 
   try {
+    // Administrator może trwale unieważnić kod synchronizacji.
+    const revokedResponse = await fetch(redisUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${redisToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(["SISMEMBER", "dziennik-kotow:sync:revoked", keyHash])
+    });
+    const revokedResult = await revokedResponse.json();
+    if (!revokedResponse.ok || revokedResult.error) {
+      return send(res, 502, { error: "Błąd sprawdzania kodu synchronizacji" });
+    }
+    if (Number(revokedResult.result) === 1) {
+      return send(res, 403, { error: "Ten kod synchronizacji został usunięty przez administratora. Użyj nowego kodu." });
+    }
+
     if (req.method === "GET") {
       const response = await fetch(redisUrl, {
         method: "POST",
