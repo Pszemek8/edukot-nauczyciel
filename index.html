@@ -357,7 +357,7 @@ async function addPasskey(){
   const pin=prompt('Wpisz PIN nauczyciela, aby dodać Passkey:');
   if(!pin)return;
   try{
-    const {startRegistration}=await import('https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13.2.2/+esm');
+    const {startRegistration}=await import('https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13.3.0/+esm');
     const setup=await passkeyRequest('register-options',{},pin);
     const response=await startRegistration({optionsJSON:setup.options});
     await passkeyRequest('register-verify',{flowId:setup.flowId,response},pin);
@@ -368,7 +368,7 @@ async function addPasskey(){
 }
 async function loginWithPasskey(){
   try{
-    const {startAuthentication}=await import('https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13.2.2/+esm');
+    const {startAuthentication}=await import('https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13.3.0/+esm');
     const setup=await passkeyRequest('login-options');
     const response=await startAuthentication({optionsJSON:setup.options});
     await passkeyRequest('login-verify',{flowId:setup.flowId,response});
