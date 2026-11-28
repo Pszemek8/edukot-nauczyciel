@@ -350,8 +350,13 @@ async function passkeyRequest(action,body={},pin=''){
   return data;
 }
 async function refreshPasskeyButton(){
-  try{const state=await passkeyRequest('status');$('#passkeyLogin').classList.toggle('hidden',!state.registered)}
-  catch{$('#passkeyLogin').classList.add('hidden')}
+  try{
+    const state=await passkeyRequest('status');
+    localStorage.setItem('edukot-passkey-enabled',state.registered?'1':'0');
+    $('#passkeyLogin').classList.toggle('hidden',!state.registered);
+  }catch{
+    $('#passkeyLogin').classList.toggle('hidden',localStorage.getItem('edukot-passkey-enabled')!=='1');
+  }
 }
 async function addPasskey(){
   const pin=prompt('Wpisz PIN nauczyciela, aby dodać Passkey:');
@@ -383,7 +388,7 @@ async function removePasskey(){
   catch(error){alert('Nie udało się usunąć Passkey: '+error.message)}
 }
 $('#passkeyLogin').addEventListener('click',loginWithPasskey);
-function lockNow(){if(localStorage.getItem('edukot-pin-disabled')==='1'){unlock();return}$('#app').classList.add('hidden');$('#lock').classList.remove('hidden');pinMode()}
+function lockNow(){if(localStorage.getItem('edukot-pin-disabled')==='1'&&localStorage.getItem('edukot-passkey-enabled')!=='1'){unlock();return}$('#app').classList.add('hidden');$('#lock').classList.remove('hidden');pinMode()}
 $('#lockBtn').onclick=lockNow;
 $('#forgot').onclick=()=>{
   if(confirm('Reset PIN-u usunie WSZYSTKIE dane z tego urządzenia (oceny, obecności, uwagi) i odłączy synchronizację. Na pewno?')){
@@ -764,8 +769,10 @@ window.addEventListener('online',syncNow);
 setStatus(hasCode()?'☁️ łączę…':'💾 tylko w tej przeglądarce');
 
 pinMode();
-refreshPasskeyButton();
-if(localStorage.getItem('edukot-pin-disabled')==='1')unlock();
+(async()=>{
+  await refreshPasskeyButton();
+  if(localStorage.getItem('edukot-pin-disabled')==='1'&&localStorage.getItem('edukot-passkey-enabled')!=='1')unlock();
+})();
 
 // Rejestracja PWA przy zwykłym uruchomieniu aplikacji (wymagana do instalacji na Androidzie).
 if ('serviceWorker' in navigator) {
