@@ -224,6 +224,9 @@ nav#nav button.active{background:transparent;color:#0878d1;font-weight:bold}
   .row .name{min-width:100%}
   .btn{min-height:38px}
 }
+.maintenance-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(23,24,39,.94);color:#fff;text-align:center}
+.maintenance-box{width:min(560px,100%);padding:30px 24px;border:1px solid #ffffff44;border-radius:22px;background:#ffffff14;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.maintenance-box .icon{font-size:54px}.maintenance-box h2{color:#fff;font-size:34px}.maintenance-box p{font-size:20px;line-height:1.45}
 </style>
 <script>
   // Przywróć wybrany motyw przed wyświetleniem strony.
@@ -233,6 +236,9 @@ nav#nav button.active{background:transparent;color:#0878d1;font-weight:bold}
 </script>
 </head>
 <body>
+<div id="maintenanceScreen" class="maintenance-screen hidden" role="alert" aria-live="assertive">
+  <div class="maintenance-box"><div class="icon">🛠️</div><h2>Przerwa techniczna</h2><p id="maintenanceText">Przepraszamy, naprawiamy błędy. Aplikacja może chwilowo nie działać.</p><p>Spróbuj ponownie za chwilę. 🐾</p></div>
+</div>
 
 <!-- Ekran PIN -->
 <div id="lock">
@@ -787,6 +793,18 @@ if ('serviceWorker' in navigator) {
     }
   });
 }
+
+async function checkMaintenance(){
+  try{
+    const r=await fetch('/api/maintenance',{cache:'no-store'});
+    if(!r.ok)return;
+    const state=await r.json();
+    document.querySelector('#maintenanceScreen').classList.toggle('hidden',!state.enabled);
+    if(state.message)document.querySelector('#maintenanceText').textContent=state.message;
+  }catch{}
+}
+checkMaintenance();
+setInterval(checkMaintenance,10000);
 
 </script>
 
