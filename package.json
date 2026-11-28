@@ -2,5 +2,8 @@
   "name": "edukot-nauczyciel",
   "version": "3.0.5",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@simplewebauthn/server": "^13.2.2"
+  }
 }
