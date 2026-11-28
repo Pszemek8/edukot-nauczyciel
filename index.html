@@ -706,7 +706,7 @@ let pushTimer=null,syncing=false,again=false,lastErr='';
 function setStatus(t){const s=$('#syncStatus');if(s)s.textContent=t}
 async function api(method,body){
   const r=await fetch('/api/sync',{method,cache:'no-store',headers:{'Content-Type':'application/json','x-sync-code':localStorage.getItem(SYNC_KEY)||''},body:body?JSON.stringify(body):undefined});
-  if(r.status===401){const e=new Error('auth');e.auth=true;throw e}
+  if(r.status===401||r.status===403){let m='Nieprawidłowy kod synchronizacji';try{m=(await r.json()).error||m}catch{}const e=new Error(m);e.auth=true;throw e}
   if(!r.ok){let m='';try{m=(await r.json()).error}catch{}throw new Error(m||('HTTP '+r.status))}
   return r.json();
 }
@@ -728,9 +728,9 @@ async function syncNow(){
     }else setStatus('☁️ zsynchronizowano');
     ok=true;
   }catch(e){
-    lastErr=e.auth?'zły kod synchronizacji':(e.message||'błąd');
+    lastErr=e.message||'błąd';
     if(e.auth)localStorage.removeItem(SYNC_KEY);
-    setStatus(e.auth?'⚠️ zły kod':'⚠️ offline');
+    setStatus(e.auth?'⚠️ kod nieaktywny':'⚠️ offline');
   }finally{syncing=false;if(again){again=false;setTimeout(syncNow,300)}}
   return ok;
 }
@@ -761,7 +761,8 @@ async function linkSync(){
     render();
     syncNow();
   }catch(e){
-    if(previous)localStorage.setItem(SYNC_KEY,previous);else localStorage.removeItem(SYNC_KEY);
+    if(e.auth)localStorage.removeItem(SYNC_KEY);
+    else if(previous)localStorage.setItem(SYNC_KEY,previous);else localStorage.removeItem(SYNC_KEY);
     lastErr=e.message||'błąd';
     setStatus('⚠️ nie połączono');
     alert('Nie udało się połączyć: '+lastErr);
