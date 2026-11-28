@@ -338,7 +338,7 @@ async function key(k){
   }
 }
 function unlock(){pinBuf='';$('#lock').classList.add('hidden');$('#app').classList.remove('hidden');render();syncNow()}
-function lockNow(){$('#app').classList.add('hidden');$('#lock').classList.remove('hidden');pinMode()}
+function lockNow(){if(localStorage.getItem('edukot-pin-disabled')==='1'){unlock();return}$('#app').classList.add('hidden');$('#lock').classList.remove('hidden');pinMode()}
 $('#lockBtn').onclick=lockNow;
 $('#forgot').onclick=()=>{
   if(confirm('Reset PIN-u usunie WSZYSTKIE dane z tego urządzenia (oceny, obecności, uwagi) i odłączy synchronizację. Na pewno?')){
@@ -501,7 +501,12 @@ document.addEventListener('click',async e=>{
   }
 });
 function vUstawienia(){
+  const pinDisabled=localStorage.getItem('edukot-pin-disabled')==='1';
   return`<h2>Ustawienia ⚙️</h2>
+  <h2 style="margin-top:22px">🔐 Blokada aplikacji</h2>
+  <p class="note">PIN można wyłączyć na tym urządzeniu. Pamiętaj, że bez PIN-u każdy, kto otworzy dziennik, będzie mógł zobaczyć jego zawartość.</p>
+  <div class="toolbar"><button class="btn ${pinDisabled?'primary':'danger'}" type="button" data-act="togglePinLock">${pinDisabled?'🔒 Włącz PIN':'🔓 Wyłącz PIN'}</button><span>${pinDisabled?'PIN wyłączony':'PIN włączony'}</span></div>
+  <p class="note">Passkey (odcisk palca / Face ID) wymaga dodatkowej obsługi serwerowej WebAuthn, dlatego nie włączam tutaj atrapowej funkcji.</p>
   <h2 style="margin-top:22px">Informacje ℹ️</h2>
 
   <h2 style="margin-top:22px">Szkoła</h2>
@@ -544,6 +549,7 @@ function kidModal(kid){
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;
   const act=b.dataset.act,kid=db.kids.find(k=>k.id===b.dataset.kid);
+  if(act==='togglePinLock'){const disabled=localStorage.getItem('edukot-pin-disabled')==='1';if(disabled){localStorage.setItem('edukot-pin-disabled','0');alert('PIN włączony.');}else if(confirm('Wyłączyć PIN? Każdy, kto otworzy aplikację na tym urządzeniu, będzie mógł zobaczyć dziennik.')){localStorage.setItem('edukot-pin-disabled','1');alert('PIN wyłączony na tym urządzeniu.');}render();return;}
   if(act==='toggleTheme'){
     const dark=!document.documentElement.classList.contains('dark');
     document.documentElement.classList.toggle('dark',dark);
@@ -709,6 +715,7 @@ window.addEventListener('online',syncNow);
 setStatus(hasCode()?'☁️ łączę…':'💾 tylko w tej przeglądarce');
 
 pinMode();
+if(localStorage.getItem('edukot-pin-disabled')==='1')unlock();
 
 // Rejestracja PWA przy zwykłym uruchomieniu aplikacji (wymagana do instalacji na Androidzie).
 if ('serviceWorker' in navigator) {
